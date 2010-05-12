@@ -762,7 +762,7 @@ package org.josht.foxhole.controls
 		
 		private function exitFrameHandler():void
 		{
-			var offset:int = 0;
+			var offset:Number = 0;
 			if(!this._autoScrolling)
 			{
 				offset = this._startTouchY - this.mouseY;
