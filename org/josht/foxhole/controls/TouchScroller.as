@@ -24,6 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 package org.josht.foxhole.controls
 {
+	import com.gskinner.motion.GTween;
+	import com.gskinner.motion.easing.Bounce;
+	import com.gskinner.motion.easing.Sine;
+	
 	import fl.controls.ScrollPolicy;
 	import fl.core.InvalidationType;
 	import fl.core.UIComponent;
@@ -34,13 +38,29 @@ package org.josht.foxhole.controls
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
+	import flash.system.Capabilities;
+	import flash.system.System;
 	import flash.utils.getTimer;
 	
 	import org.josht.foxhole.core.FrameTicker;
 	
+	/**
+	 * Dispatched when horizontalScrollPosition, verticalScrollPosition,
+	 * maxHorizontalScrollPosition, or maxVerticalScrollPosition changes.
+	 */
+	[Event(name="scroll",type="flash.events.Event")]
+	
+	/**
+	 * A chrome-less container for touch-based scrolling of content. Supports
+	 * elastic edges (the user can over-scroll, and the content will
+	 * automatically bounce back to the edge) and flick gestures to throw
+	 * content.
+	 * 
+	 * @author Josh Tynjala
+	 */
 	public class TouchScroller extends UIComponent
 	{
-		private static const DEFAULT_FRICTION:Number = 0.4;
+		private static const DEFAULT_FRICTION_COEFFICIENT:Number = 0.1;
 		
 		public function TouchScroller()
 		{
@@ -57,6 +77,10 @@ package org.josht.foxhole.controls
 
 		public function set clipContent(value:Boolean):void
 		{
+			if(this._clipContent == value)
+			{
+				return;
+			}
 			this._clipContent = value;
 			this.invalidate(InvalidationType.SCROLL);
 			this.invalidate(InvalidationType.SIZE);
@@ -94,11 +118,17 @@ package org.josht.foxhole.controls
 		private var _startTime:int;
 		private var _startMouseX:Number;
 		private var _startMouseY:Number;
+		private var _lastTime:int;
+		private var _lastMouseX:Number;
+		private var _lastMouseY:Number;
+		private var _lastVelocityX:Number;
+		private var _lastVelocityY:Number;
 		private var _startHorizontalScrollPosition:Number;
 		private var _startVerticalScrollPosition:Number;
-		private var _targetHorizontalScrollPosition:Number;
-		private var _targetVerticalScrollPosition:Number;
+		
 		private var _autoScrolling:Boolean = false;
+		
+		private var _fling:GTween;
 		
 		private var _verticalScrollPosition:Number = 0;
 		
@@ -115,6 +145,7 @@ package org.josht.foxhole.controls
 			}
 			this._verticalScrollPosition = value;
 			this.invalidate(InvalidationType.SCROLL);
+			this.dispatchEvent(new Event(Event.SCROLL));
 		}
 		
 		private var _maxVerticalScrollPosition:Number = 0;
@@ -151,6 +182,7 @@ package org.josht.foxhole.controls
 			}
 			this._horizontalScrollPosition = value;
 			this.invalidate(InvalidationType.SCROLL);
+			this.dispatchEvent(new Event(Event.SCROLL));
 		}
 
 		private var _maxHorizontalScrollPosition:Number = 0;
@@ -172,18 +204,29 @@ package org.josht.foxhole.controls
 			this._horizontalScrollPolicy = value;
 		}
 		
-		private var _scrollFriction:Number = DEFAULT_FRICTION;
+		private var _scrollFrictionCoefficient:Number = DEFAULT_FRICTION_COEFFICIENT;
 
-		public function get scrollFriction():Number
+		public function get scrollFrictionCoefficient():Number
 		{
-			return this._scrollFriction;
+			return this._scrollFrictionCoefficient;
 		}
 
-		public function set scrollFriction(value:Number):void
+		public function set scrollFrictionCoefficient(value:Number):void
 		{
-			this._scrollFriction = value;
+			this._scrollFrictionCoefficient = value;
+		}
+		
+		private var _hasElasticEdges:Boolean = true;
+
+		public function get hasElasticEdges():Boolean
+		{
+			return this._hasElasticEdges;
 		}
 
+		public function set hasElasticEdges(value:Boolean):void
+		{
+			this._hasElasticEdges = value;
+		}
 
 		override protected function configUI():void
 		{
@@ -200,148 +243,193 @@ package org.josht.foxhole.controls
 			
 			if(sizeInvalid)
 			{
-				if(this.clipContent)
-				{
-					var scrollRect:Rectangle = this._contentContainer.scrollRect;
-					if(!scrollRect)
-					{
-						scrollRect = new Rectangle();
-					}
-					scrollRect.width = this._width;
-					scrollRect.height = this._height;
-					this._contentContainer.scrollRect = scrollRect;
-				}
-				else if(this._contentContainer.scrollRect)
-				{
-					this._contentContainer.scrollRect = null;
-				}
-				
-				this.graphics.clear();
-				this.graphics.beginFill(0xff00ff, 0);
-				this.graphics.drawRect(0, 0, this._width, this._height);
-				this.graphics.endFill();
+				this.updateSize();
 			}
 			
-			if(this._content && (scrollInvalid || sizeInvalid))
+			if(scrollInvalid || sizeInvalid)
 			{
-				this._maxHorizontalScrollPosition = Math.max(0, this._content.width - this._width);
-				this._maxVerticalScrollPosition = Math.max(0, this._content.height - this._height);
-				if(this.clipContent)
-				{
-					scrollRect = this._contentContainer.scrollRect;
-					if(!scrollRect)
-					{
-						scrollRect = new Rectangle();
-					}
-					scrollRect.x = this._horizontalScrollPosition;
-					scrollRect.y = this._verticalScrollPosition;
-					this._contentContainer.scrollRect = scrollRect;
-				}
-				else
-				{
-					this._content.x = -this._horizontalScrollPosition;
-					this._content.y = -this._verticalScrollPosition;
-				}
+				this.updateScrollPosition();
 			}
 			
 			super.draw();
 		}
 		
-		private function updateScrollFromMousePosition():void
+		private function updateSize():void
 		{
-			var oldHorizontalScrollPosition:Number = this._horizontalScrollPosition;
-			if(this._horizontalScrollPolicy != ScrollPolicy.OFF)
+			if(this.clipContent)
 			{
-				var offsetX:Number = this._startMouseX - this.mouseX;
-				var positionX:Number = this._startHorizontalScrollPosition + offsetX;
-				if(this._horizontalScrollPosition < 0)
+				var scrollRect:Rectangle = this._contentContainer.scrollRect;
+				if(!scrollRect)
 				{
-					positionX /= 2;
+					scrollRect = new Rectangle();
 				}
-				else if(positionX > this._maxHorizontalScrollPosition)
-				{
-					positionX -= (positionX - this._maxHorizontalScrollPosition) / 2;
-				}
-				this.horizontalScrollPosition = positionX;
+				scrollRect.width = this._width;
+				scrollRect.height = this._height;
+				this._contentContainer.scrollRect = scrollRect;
+				this._contentContainer.x = 0;
+				this._contentContainer.y = 0;
+			}
+			else if(this._contentContainer.scrollRect)
+			{
+				this._contentContainer.scrollRect = null;
 			}
 			
-			var oldVerticalScrollPosition:Number = this._verticalScrollPosition;
-			if(this._verticalScrollPolicy != ScrollPolicy.OFF)
+			//draw a transparent background so that we can catch the mouse
+			this.graphics.clear();
+			this.graphics.beginFill(0xff00ff, 0);
+			this.graphics.drawRect(0, 0, this._width, this._height);
+			this.graphics.endFill();
+		}
+		
+		private function updateScrollPosition():void
+		{
+			if(!this._content)
 			{
-				var offsetY:Number = this._startMouseY - this.mouseY;
-				var positionY:Number = this._startVerticalScrollPosition + offsetY;
-				if(this._verticalScrollPosition < 0)
-				{
-					positionY /= 2;
-				}
-				else if(positionY > this._maxVerticalScrollPosition)
-				{
-					positionY -= (positionY - this._maxVerticalScrollPosition) / 2;
-				}
-				this.verticalScrollPosition = positionY;
+				return;
 			}
 			
-			if(oldVerticalScrollPosition != this._verticalScrollPosition ||
-				oldHorizontalScrollPosition != this._horizontalScrollPosition)
+			var oldMaxHorizontalScrollPosition:Number = this._maxHorizontalScrollPosition;
+			var oldMaxVerticalScrollPosition:Number = this._maxVerticalScrollPosition;
+			this._maxHorizontalScrollPosition = Math.max(0, this._content.width - this._width);
+			this._maxVerticalScrollPosition = Math.max(0, this._content.height - this._height);
+			if(this.clipContent)
+			{
+				var scrollRect:Rectangle = this._contentContainer.scrollRect;
+				scrollRect.x = this._horizontalScrollPosition;
+				scrollRect.y = this._verticalScrollPosition;
+				this._contentContainer.scrollRect = scrollRect;
+			}
+			else
+			{
+				this._contentContainer.x = -this._horizontalScrollPosition;
+				this._contentContainer.y = -this._verticalScrollPosition;
+			}
+			
+			if(oldMaxHorizontalScrollPosition != this._maxHorizontalScrollPosition ||
+				oldMaxVerticalScrollPosition != this._maxVerticalScrollPosition)
 			{
 				this.dispatchEvent(new Event(Event.SCROLL));
 			}
 		}
 		
-		private function autoScroll():void
+		private function calculateTargetScrollPosition(scrollPosition:Number, maxScrollPosition:Number, velocity:Number):FlingResult
 		{
-			if(this._verticalScrollPolicy != ScrollPolicy.OFF)
-			{
-				var differenceY:Number = (this._verticalScrollPosition - this._targetVerticalScrollPosition) * this._scrollFriction;
-				this.verticalScrollPosition -= differenceY;
-			}
+			const deceleration:Number = (velocity < 0 ? -1 : 1) * 386 * Capabilities.screenDPI * this._scrollFrictionCoefficient;
 			
-			if(this._horizontalScrollPolicy != ScrollPolicy.OFF)
+			var targetScrollPosition:Number = scrollPosition;
+			var duration:Number = 0.25;
+			if(scrollPosition < 0)
 			{
-				var differenceX:Number = (this._horizontalScrollPosition - this._targetHorizontalScrollPosition) * this._scrollFriction;
-				this.horizontalScrollPosition -= differenceX;
+				targetScrollPosition = 0;
 			}
-			
-			if(Math.abs(this._verticalScrollPosition - this._targetVerticalScrollPosition) < 1 &&
-				Math.abs(this._horizontalScrollPosition - this._targetHorizontalScrollPosition) < 1)
+			else if(scrollPosition > maxScrollPosition)
 			{
-				this.horizontalScrollPosition = this._targetHorizontalScrollPosition;
-				this.verticalScrollPosition = this._targetVerticalScrollPosition;
-				this._autoScrolling = false;
-				FrameTicker.removeExitFrameCallback(onTick);
+				targetScrollPosition = maxScrollPosition;
 			}
-			this.dispatchEvent(new Event(Event.SCROLL));
-		}
-		
-		private function calculateTargetScrollPosition(scrollPosition:Number, maxScrollPosition:Number, startMouse:Number, currentMouse:Number):Number
-		{
-			var distance:Number = currentMouse - startMouse;
-			var pixelsPerMS:Number = distance / (getTimer() - this._startTime); 
-			var pixelsPerFrame:Number = 1.5 * (pixelsPerMS * 1000) / this.loaderInfo.frameRate;
-			var targetScrollPosition:Number = this._verticalScrollPosition;
-			while(Math.abs(pixelsPerFrame) >= 1) //there's probably an equation for this...
+			else if(velocity != 0)
 			{
-				targetScrollPosition -= pixelsPerFrame;
-				if(targetScrollPosition < 0 || targetScrollPosition > maxScrollPosition)
+				duration = velocity / deceleration;
+				var distance:Number = (velocity * duration) - (deceleration * duration * duration) / 2;
+				targetScrollPosition = scrollPosition + distance;
+				
+				if(targetScrollPosition < 0)
 				{
-					pixelsPerFrame /= 2;
-					targetScrollPosition += pixelsPerFrame;
+					duration *= (1 - (targetScrollPosition / distance));
+					targetScrollPosition = 0;
 				}
-				pixelsPerFrame *= (1 - this._scrollFriction);
+				else if(targetScrollPosition > maxScrollPosition)
+				{
+					duration *= (1 - (targetScrollPosition - maxScrollPosition) / distance);
+					targetScrollPosition = maxScrollPosition;
+				}
 			}
 			
-			return targetScrollPosition;
+			return new FlingResult(duration, targetScrollPosition);
 		}
 		
 		private function onTick():void
 		{
-			if(!this._autoScrolling)
+			var now:int = getTimer();
+			if(this._horizontalScrollPolicy != ScrollPolicy.OFF)
 			{
-				this.updateScrollFromMousePosition();
+				var offsetX:Number = this._startMouseX - this.mouseX;
+				var positionX:Number = this._startHorizontalScrollPosition + offsetX;
+				if(positionX < 0)
+				{
+					if(this._hasElasticEdges)
+					{
+						positionX /= 3;
+					}
+					else
+					{
+						positionX = 0;
+					}
+				}
+				else if(positionX > this._maxHorizontalScrollPosition)
+				{
+					if(this._hasElasticEdges)
+					{
+						positionX -= (positionX - this._maxHorizontalScrollPosition) / 3;
+					}
+					else
+					{
+						positionX = this._maxHorizontalScrollPosition;
+					}
+				}
+				this.horizontalScrollPosition = positionX;
+				this._lastVelocityX = (this._lastMouseX - this.mouseX) * (1000 / (now - this._lastTime));
+				this._lastMouseX = this.mouseX;
 			}
-			else
+			
+			if(this._verticalScrollPolicy != ScrollPolicy.OFF)
 			{
-				this.autoScroll();
+				var offsetY:Number = this._startMouseY - this.mouseY;
+				var positionY:Number = this._startVerticalScrollPosition + offsetY;
+				if(positionY < 0)
+				{
+					if(this._hasElasticEdges)
+					{
+						positionY /= 3;
+					}
+					else
+					{
+						positionY = 0;
+					}
+				}
+				else if(positionY > this._maxVerticalScrollPosition)
+				{
+					if(this._hasElasticEdges)
+					{
+						positionY -= (positionY - this._maxVerticalScrollPosition) / 3;
+					}
+					else
+					{
+						positionY = this._maxVerticalScrollPosition;
+					}
+				}
+				this.verticalScrollPosition = positionY;
+				this._lastVelocityY = (this._lastMouseY - this.mouseY) * (1000 / (now - this._lastTime));
+				this._lastMouseY = this.mouseY;
+			}
+			this._lastTime = now;
+		}
+		
+		private function fling_onComplete(tween:GTween):void
+		{
+			var targetHorizontalScrollPosition:Number = Math.min(Math.max(0, this._horizontalScrollPosition), this._maxHorizontalScrollPosition);
+			var targetVerticalScrollPosition:Number = Math.min(Math.max(0, this._verticalScrollPosition), this._maxVerticalScrollPosition);
+			
+			if(targetHorizontalScrollPosition != this._horizontalScrollPosition ||
+				targetVerticalScrollPosition != this._verticalScrollPosition)
+			{
+				this._fling = new GTween(this, 0.5,
+				{
+					horizontalScrollPosition: targetHorizontalScrollPosition,
+					verticalScrollPosition: targetVerticalScrollPosition
+				},
+				{
+					ease: Sine.easeOut
+				});
 			}
 		}
 
@@ -352,22 +440,21 @@ package org.josht.foxhole.controls
 				return;
 			}
 			
+			if(this._fling)
+			{
+				this._fling.paused = true;
+				this._fling = null;
+			}
+			
 			this._startTime = getTimer();
 			this._startMouseX = this.mouseX;
 			this._startMouseY = this.mouseY;
 			this._startHorizontalScrollPosition = this._horizontalScrollPosition;
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
-			this._targetHorizontalScrollPosition = this._horizontalScrollPosition;
-			this._targetVerticalScrollPosition = this._verticalScrollPosition;
+			this._lastMouseX = this.mouseX;
+			this._lastMouseY = this.mouseY;
 			
-			if(this._autoScrolling)
-			{
-				this._autoScrolling = false;
-			}
-			else
-			{
-				FrameTicker.addExitFrameCallback(onTick);
-			}
+			FrameTicker.addExitFrameCallback(onTick);
 			
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, stage_mouseUpHandler, false, 0, true);
 		}
@@ -375,40 +462,52 @@ package org.josht.foxhole.controls
 		private function stage_mouseUpHandler(event:MouseEvent):void
 		{
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_mouseUpHandler);
+			FrameTicker.removeExitFrameCallback(onTick);
 			
+			var duration:Number = 0.25;
+			var targetVerticalScrollPosition:Number = this._verticalScrollPosition;
+			var targetHorizontalScrollPosition:Number = this._horizontalScrollPosition;
 			this._autoScrolling = true;
 			if(this._verticalScrollPolicy != ScrollPolicy.OFF)
 			{
-				if(this._verticalScrollPosition <= 0)
-				{
-					this._targetVerticalScrollPosition = 0;
-				}
-				else if(this._verticalScrollPosition >= this._maxVerticalScrollPosition)
-				{
-					this._targetVerticalScrollPosition = this._maxVerticalScrollPosition;
-				}
-				else
-				{
-					this._targetVerticalScrollPosition = this.calculateTargetScrollPosition(this._verticalScrollPosition, this._maxVerticalScrollPosition, this._startMouseY, this.mouseY);
-				}
+				var result:FlingResult = this.calculateTargetScrollPosition(this._verticalScrollPosition, this._maxVerticalScrollPosition, this._lastVelocityY);
+				duration = Math.max(duration, result.duration);
+				targetVerticalScrollPosition = result.position;
 			}
 			
 			if(this._horizontalScrollPolicy != ScrollPolicy.OFF)
 			{
-				if(this._horizontalScrollPosition <= 0)
+				result = this.calculateTargetScrollPosition(this._horizontalScrollPosition, this._maxHorizontalScrollPosition, this._lastVelocityX);
+				duration = Math.max(duration, result.duration);
+				targetHorizontalScrollPosition = result.position;
+			}
+			
+			if(targetVerticalScrollPosition != this._verticalScrollPosition ||
+				targetHorizontalScrollPosition != this._horizontalScrollPosition)
+			{
+				this._fling = new GTween(this, duration,
 				{
-					this._targetHorizontalScrollPosition = 0;
-				}
-				else if(this._horizontalScrollPosition >= this._maxHorizontalScrollPosition)
+					horizontalScrollPosition: targetHorizontalScrollPosition,
+					verticalScrollPosition: targetVerticalScrollPosition
+				},
 				{
-					this._targetHorizontalScrollPosition = this._maxHorizontalScrollPosition;
-				}
-				else
-				{
-					this._targetHorizontalScrollPosition = this.calculateTargetScrollPosition(this._horizontalScrollPosition, this._maxHorizontalScrollPosition, this._startMouseX, this.mouseX);
-				}
+					ease: Sine.easeOut,
+					onComplete: fling_onComplete
+				});
 			}
 			
 		}
 	}
+}
+
+class FlingResult
+{
+	public function FlingResult(duration:Number = 0, position:Number = 0)
+	{
+		this.duration = duration;
+		this.position = position;
+	}
+	
+	public var duration:Number;
+	public var position:Number;
 }

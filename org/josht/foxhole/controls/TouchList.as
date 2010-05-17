@@ -104,9 +104,9 @@ package org.josht.foxhole.controls
 	/**
 	 * Dispatched when the user scrolls horizontally or vertically.
 	 *
-	 * @eventType fl.events.ScrollEvent.SCROLL
+	 * @eventType flash.events.Event.SCROLL
 	 */
-	[Event(name="scroll", type="fl.events.ScrollEvent")]
+	[Event(name="scroll", type="flash.events.Event")]
 	
 	/**
 	 * The padding that separates the border of the list from its contents, in pixels.
@@ -179,14 +179,14 @@ package org.josht.foxhole.controls
 		private var _background:DisplayObject;
 		//private var _content:Sprite;
 		
-		private var _verticalScrollPosition:int = 0;
+		private var _verticalScrollPosition:Number = 0;
 		
-		public function get verticalScrollPosition():int
+		public function get verticalScrollPosition():Number
 		{
 			return this._verticalScrollPosition;
 		}
 		
-		public function set verticalScrollPosition(value:int):void
+		public function set verticalScrollPosition(value:Number):void
 		{
 			if(this._verticalScrollPosition == value)
 			{
@@ -196,9 +196,9 @@ package org.josht.foxhole.controls
 			this.invalidate(InvalidationType.SCROLL);
 		}
 		
-		private var _maxVerticalScrollPosition:int = 0;
+		private var _maxVerticalScrollPosition:Number = 0;
 		
-		public function get maxVerticalScrollPosition():int
+		public function get maxVerticalScrollPosition():Number
 		{
 			return this._maxVerticalScrollPosition;
 		}
@@ -225,6 +225,7 @@ package org.josht.foxhole.controls
 			{
 				this._dataProvider.addEventListener(DataChangeEvent.DATA_CHANGE, dataProvider_dataChangeHandler);
 			}
+			this.verticalScrollPosition = 0; //reset the scroll position
 			this.invalidate(InvalidationType.DATA);
 		}
 		
@@ -316,8 +317,9 @@ package org.josht.foxhole.controls
 
 		
 		private var _startTouchTime:int;
-		private var _startTouchY:Number;
-		private var _startVerticalScrollPosition:int;
+		private var _startMouseY:Number;
+		private var _startVerticalScrollPosition:Number;
+		private var _targetVerticalScrollPosition:Number;
 		
 		private var _autoScrolling:Boolean = false;
 		private var _isScrolling:Boolean = false;
@@ -325,8 +327,6 @@ package org.josht.foxhole.controls
 		private var _inactiveRenderers:Vector.<ICellRenderer> = new Vector.<ICellRenderer>;
 		private var _activeRenderers:Vector.<ICellRenderer> = new Vector.<ICellRenderer>;
 		private var _rendererMap:Dictionary = new Dictionary(true);
-		
-		private var _targetY:int;
 		
 		//--------------------------------------
 		//  Protected Methods
@@ -712,30 +712,45 @@ package org.josht.foxhole.controls
 			this._activeRenderers.push(renderer);
 		}
 		
-		private function finishScrolling():void
+		private function updateScrollFromMousePosition():void
 		{
-			var maxDifference:Number = this._verticalScrollPosition - this._maxVerticalScrollPosition;
-			if(maxDifference > 0)
+			var offset:Number = this._startMouseY - this.mouseY;
+			var position:Number = this._startVerticalScrollPosition + offset;
+			if(this._verticalScrollPosition < 0)
 			{
-				this._autoScrolling = true;
-				this._targetY = this._maxVerticalScrollPosition;
+				position /= 2;
 			}
-			else if(this._verticalScrollPosition < 0)
+			else if(position > this._maxVerticalScrollPosition)
 			{
-				this._autoScrolling = true;
-				this._targetY = 0;
+				position -= (position - this._maxVerticalScrollPosition) / 2;
 			}
-			else
+			
+			var oldPosition:Number = this._verticalScrollPosition;
+			this.verticalScrollPosition = position;
+			
+			if(oldPosition != this._verticalScrollPosition)
 			{
+				this.dispatchEvent(new Event(Event.SCROLL));
+			}
+		}
+		
+		private function autoScroll():void
+		{
+			var difference:Number = (this._verticalScrollPosition - this._targetVerticalScrollPosition) * FRICTION;
+			this.verticalScrollPosition -= difference;
+			
+			if(Math.abs(this._verticalScrollPosition - this._targetVerticalScrollPosition) < 1)
+			{
+				this.verticalScrollPosition = this._targetVerticalScrollPosition;
 				if(this._isScrolling)
 				{
-					//this._content.mouseChildren = true;
 					this.mouseChildren = true;
 				}
 				this._isScrolling = false;
 				this._autoScrolling = false;
 				FrameTicker.removeExitFrameCallback(exitFrameHandler);
 			}
+			this.dispatchEvent(new Event(Event.SCROLL));
 		}
 		
 		//--------------------------------------
@@ -756,51 +771,19 @@ package org.josht.foxhole.controls
 			
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, stage_mouseUpHandler, false, 0, true);
 			this._startTouchTime = getTimer();
-			this._startTouchY = this.mouseY;
+			this._startMouseY = this.mouseY;
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
 		}
 		
 		private function exitFrameHandler():void
 		{
-			var offset:Number = 0;
 			if(!this._autoScrolling)
 			{
-				offset = this._startTouchY - this.mouseY;
-				var position:Number = this._startVerticalScrollPosition + offset;
-				if(this._verticalScrollPosition < 0)
-				{
-					position /= 2;
-				}
-				else if(position > this._maxVerticalScrollPosition)
-				{
-					position -= (position - this._maxVerticalScrollPosition) / 2;
-				}
-				
-				this.verticalScrollPosition = position;
+				this.updateScrollFromMousePosition();
 			}
 			else
 			{
-				var difference:Number = this._verticalScrollPosition - this._targetY;
-				if(difference > 0)
-				{
-					offset = Math.ceil(difference * FRICTION);
-				}
-				else
-				{
-					offset = Math.floor(difference * FRICTION);
-				}
-				this.verticalScrollPosition -= offset;
-				if(Math.abs(difference) < 1)
-				{
-					this.finishScrolling();
-				}
-			}
-			if(offset != 0)
-			{
-				this._isScrolling = true;
-				//this._content.mouseChildren = false;
-				this.mouseChildren = false;
-				this.dispatchEvent(new ScrollEvent(ScrollBarDirection.VERTICAL, offset, this._verticalScrollPosition));
+				this.autoScroll();
 			}
 		}
 		
@@ -808,28 +791,32 @@ package org.josht.foxhole.controls
 		{
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_mouseUpHandler);
 			
-			if(this._verticalScrollPosition <= 0 || this._verticalScrollPosition >= this._maxVerticalScrollPosition)
+			this._autoScrolling = true;
+			if(this._verticalScrollPosition <= 0)
 			{
-				this.finishScrolling();
+				this._targetVerticalScrollPosition = 0;
+				return;
+			}
+			else if(this._verticalScrollPosition >= this._maxVerticalScrollPosition)
+			{
+				this._targetVerticalScrollPosition = this._maxVerticalScrollPosition;
 				return;
 			}
 			
-			var distance:Number = this.mouseY - this._startTouchY;
-			this._targetY = this._verticalScrollPosition - (distance * 0.5);
+			var distance:Number = this.mouseY - this._startMouseY;
 			var pixelsPerMS:Number = distance / (getTimer() - this._startTouchTime); 
 			var pixelsPerFrame:Number = 1.5 * (pixelsPerMS * 1000) / this.loaderInfo.frameRate;
-			this._targetY = this._verticalScrollPosition;
+			this._targetVerticalScrollPosition = this._verticalScrollPosition;
 			while(Math.abs(pixelsPerFrame) >= 1) //there's probably an equation for this...
 			{
-				this._targetY -= pixelsPerFrame;
-				if(this._targetY < 0 || this._targetY > this._maxVerticalScrollPosition)
+				this._targetVerticalScrollPosition -= pixelsPerFrame;
+				if(this._targetVerticalScrollPosition < 0 || this._targetVerticalScrollPosition > this._maxVerticalScrollPosition)
 				{
 					pixelsPerFrame /= 2;
-					this._targetY += pixelsPerFrame;
+					this._targetVerticalScrollPosition += pixelsPerFrame;
 				}
 				pixelsPerFrame *= (1 - FRICTION);
 			}
-			this._autoScrolling = true;
 		}
 		
 		private function dataProvider_dataChangeHandler(event:DataChangeEvent):void
