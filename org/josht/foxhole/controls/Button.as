@@ -27,6 +27,7 @@ package org.josht.foxhole.controls
 	import fl.core.InvalidationType;
 	import fl.core.UIComponent;
 	
+	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
 	import flash.errors.IllegalOperationError;
 	import flash.events.MouseEvent;
@@ -56,6 +57,13 @@ package org.josht.foxhole.controls
 	[Style(name="downSkin", type="Class")]
 	
 	/**
+	 * The class that provides the skin for the disabled state of the component.
+	 *
+	 * @default Button_disabledSkin
+	 */
+	[Style(name="disabledSkin", type="Class")]
+	
+	/**
 	 * The padding that separates the border of the button from its contents, in pixels.
 	 *
 	 * @default null
@@ -66,11 +74,13 @@ package org.josht.foxhole.controls
 	{
 		private static const STATE_UP:String = "up";
 		private static const STATE_DOWN:String = "down";
+		private static const STATE_DISABLED:String = "disabled";
 		
 		private static var defaultStyles:Object =
 		{
 			upSkin: "Button_upSkin",
 			downSkin: "Button_downSkin",
+			disabledSkin: "Button_disabledSkin",
 			contentPadding: null,
 			scaleSkins: true,
 			//not used by default, but good to have set as a default for when
@@ -87,6 +97,24 @@ package org.josht.foxhole.controls
 		{
 			this.mouseChildren = false;
 			this.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+		}
+		
+		override public function set enabled(value:Boolean):void
+		{
+			super.enabled = value;
+			if(!this.enabled)
+			{
+				this.mouseEnabled = false;
+				this.currentState = STATE_DISABLED;
+			}
+			else
+			{
+				if(this.currentState == STATE_DISABLED)
+				{
+					this.currentState = STATE_UP;
+				}
+				this.mouseEnabled = true;
+			}
 		}
 		
 		private var _stateToDefaultSize:Object = {};
@@ -140,7 +168,7 @@ package org.josht.foxhole.controls
 		
 		protected function get stateNames():Vector.<String>
 		{
-			return Vector.<String>([STATE_UP, STATE_DOWN]);
+			return Vector.<String>([STATE_UP, STATE_DOWN, STATE_DISABLED]);
 		}
 
 		override protected function configUI():void
@@ -169,7 +197,7 @@ package org.josht.foxhole.controls
 			}
 			
 			var contentPaddingChanged:Boolean = false;
-			if(stylesInvalid)
+			if(stylesInvalid || stateInvalid)
 			{
 				this.refreshSkins();
 				this.refreshLabelStyles();
@@ -279,7 +307,10 @@ package org.josht.foxhole.controls
 				size.x = skin.width;
 				size.y = skin.height;
 				this._stateToDefaultSize[state] = size;
-				skin.cacheAsBitmap = true;
+				if(!(skin is Bitmap))
+				{
+					skin.cacheAsBitmap = true;
+				}
 			}
 			
 			//make sure the label is always on top.
@@ -292,7 +323,15 @@ package org.josht.foxhole.controls
 		
 		protected function refreshLabelStyles():void
 		{	
-			var textFormat:TextFormat = this.getStyleValue("textFormat") as TextFormat;
+			var textFormat:TextFormat;
+			if(this._enabled)
+			{
+				textFormat = this.getStyleValue("textFormat") as TextFormat;
+			}
+			else
+			{
+				textFormat = this.getStyleValue("disabledTextFormat") as TextFormat;
+			}
 			this.labelField.setTextFormat(textFormat);
 			this.labelField.defaultTextFormat = textFormat;
 			this.labelField.embedFonts = this.getStyleValue("embedFonts") as Boolean;
