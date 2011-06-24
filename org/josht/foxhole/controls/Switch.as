@@ -29,6 +29,7 @@ package org.josht.foxhole.controls
 	import fl.core.InvalidationType;
 	import fl.core.UIComponent;
 	
+	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
 	import flash.errors.IllegalOperationError;
 	import flash.events.Event;
@@ -171,7 +172,9 @@ package org.josht.foxhole.controls
 			
 			this.thumb.validateNow();
 			
-			if(dataInvalid)
+			//we have to check for a size change here because the thumb
+			//will need to be repositioned.
+			if(sizeInvalid || dataInvalid)
 			{
 				this.updateSelection();
 			}
@@ -188,13 +191,15 @@ package org.josht.foxhole.controls
 				xPosition = this._width - this.thumb.width - contentPadding;
 			}
 			
+			//stop the tween, no matter what
+			if(this._selectionChangeTween)
+			{
+				this._selectionChangeTween.paused = true;
+				this._selectionChangeTween = null;
+			}
+			
 			if(this._userChange)
 			{
-				if(this._selectionChangeTween)
-				{
-					this._selectionChangeTween.paused = true;
-					this._selectionChangeTween = null;
-				}
 				this._selectionChangeTween = new GTween(this.thumb, 0.15,
 				{
 					x: xPosition
@@ -281,7 +286,10 @@ package org.josht.foxhole.controls
 			}
 			this._backgroundBounds.x = skin.width;
 			this._backgroundBounds.y = skin.height;
-			this.skin.cacheAsBitmap = true;
+			if(!this.skin is Bitmap)
+			{
+				this.skin.cacheAsBitmap = true;
+			}
 		}
 		
 		protected function alignBackground():void
