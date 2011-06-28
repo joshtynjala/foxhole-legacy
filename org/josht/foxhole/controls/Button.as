@@ -179,7 +179,6 @@ package org.josht.foxhole.controls
 			{
 				this.labelField = new TextField();
 				this.labelField.selectable = this.labelField.mouseEnabled = false;
-				this.labelField.cacheAsBitmap = true;
 				this.addChild(this.labelField);
 			}
 		}
