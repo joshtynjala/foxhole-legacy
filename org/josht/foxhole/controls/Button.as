@@ -195,12 +195,12 @@ package org.josht.foxhole.controls
 				this.labelField.text = this._label;
 			}
 			
+			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			var contentPaddingChanged:Boolean = false;
 			if(stylesInvalid || stateInvalid)
 			{
 				this.refreshSkins();
 				this.refreshLabelStyles();
-				var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 				contentPaddingChanged = this.labelField.x != contentPadding;
 			}
 			
