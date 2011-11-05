@@ -29,6 +29,8 @@ package org.josht.foxhole.controls
 	
 	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
+	import flash.display.DisplayObjectContainer;
+	import flash.display.InteractiveObject;
 	import flash.errors.IllegalOperationError;
 	import flash.events.MouseEvent;
 	import flash.geom.Matrix;
@@ -178,7 +180,8 @@ package org.josht.foxhole.controls
 			if(!this.labelField)
 			{
 				this.labelField = new TextField();
-				this.labelField.selectable = this.labelField.mouseEnabled = false;
+				this.labelField.selectable = this.labelField.mouseEnabled =
+					this.labelField.mouseWheelEnabled = false;
 				this.addChild(this.labelField);
 			}
 		}
@@ -195,8 +198,8 @@ package org.josht.foxhole.controls
 				this.labelField.text = this._label;
 			}
 			
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			var contentPaddingChanged:Boolean = false;
+			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			if(stylesInvalid || stateInvalid)
 			{
 				this.refreshSkins();
@@ -285,6 +288,14 @@ package org.josht.foxhole.controls
 							this.removeChild(skin);
 						}
 						skin = DisplayObject(skinStyle);
+						if(skin is InteractiveObject)
+						{
+							InteractiveObject(skin).mouseEnabled = false;
+						}
+						if(skin is DisplayObjectContainer)
+						{
+							DisplayObjectContainer(skin).mouseChildren = false;
+						}
 						this.addChild(skin);
 					}
 				}
