@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010 Josh Tynjala
+Copyright (c) 2011 Josh Tynjala
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -29,25 +29,23 @@ package org.josht.foxhole.controls
 	import fl.core.InvalidationType;
 	import fl.core.UIComponent;
 	
-	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
 	import flash.errors.IllegalOperationError;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
-	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	import flash.utils.getDefinitionByName;
 	
 	import org.josht.foxhole.core.FrameTicker;
 	
-	public class Switch extends UIComponent
+	public class ToggleSwitch extends UIComponent
 	{
 		private static var defaultStyles:Object =
 		{
+			showLabels: true,
 			skin: "Button_upSkin",
 			thumbStyles: null,
 			contentPadding: null,
@@ -60,7 +58,7 @@ package org.josht.foxhole.controls
 			return mergeStyles(defaultStyles, UIComponent.getStyleDefinition());
 		}
 		
-		public function Switch()
+		public function ToggleSwitch()
 		{
 			super();
 			this.addEventListener(MouseEvent.CLICK, clickHandler);
@@ -105,7 +103,6 @@ package org.josht.foxhole.controls
 				this.offLabelField.mouseEnabled = false;
 				this.offLabelField.text = "OFF";
 				this.offLabelField.scrollRect = new Rectangle(0, 0, this.offLabelField.textWidth + 5, this.offLabelField.textHeight + 4);
-				this.offLabelField.cacheAsBitmap = true;
 				this.addChild(this.offLabelField);
 			}
 			
@@ -116,7 +113,6 @@ package org.josht.foxhole.controls
 				this.onLabelField.mouseEnabled = false;
 				this.onLabelField.text = "ON";
 				this.onLabelField.scrollRect = new Rectangle(0, 0, this.onLabelField.textWidth + 5, this.onLabelField.textHeight + 4);
-				this.onLabelField.cacheAsBitmap = true;
 				this.addChild(this.onLabelField);
 			}
 			
@@ -130,9 +126,9 @@ package org.josht.foxhole.controls
 		
 		override protected function draw():void
 		{
-			var dataInvalid:Boolean = this.isInvalid(InvalidationType.DATA);
-			var stylesInvalid:Boolean = this.isInvalid(InvalidationType.STYLES);
-			var sizeInvalid:Boolean = this.isInvalid(InvalidationType.SIZE);
+			const dataInvalid:Boolean = this.isInvalid(InvalidationType.DATA);
+			const stylesInvalid:Boolean = this.isInvalid(InvalidationType.STYLES);
+			const sizeInvalid:Boolean = this.isInvalid(InvalidationType.SIZE);
 			
 			var contentPaddingChanged:Boolean = false;
 			if(stylesInvalid)
@@ -140,13 +136,13 @@ package org.josht.foxhole.controls
 				this.refreshSkins();
 				this.refreshLabelStyles();
 				this.refreshThumbStyles();
-				var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+				const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 				contentPaddingChanged = this.onLabelField.x != contentPadding;
 			}
 			
 			if(stylesInvalid || sizeInvalid)
 			{
-				var scaleSkin:Boolean = this.getStyleValue("scaleSkin") as Boolean;
+				const scaleSkin:Boolean = this.getStyleValue("scaleSkin") as Boolean;
 				if(scaleSkin)
 				{
 					this.skin.x = 0;
@@ -172,9 +168,7 @@ package org.josht.foxhole.controls
 			
 			this.thumb.validateNow();
 			
-			//we have to check for a size change here because the thumb
-			//will need to be repositioned.
-			if(sizeInvalid || dataInvalid)
+			if(sizeInvalid || stylesInvalid || dataInvalid)
 			{
 				this.updateSelection();
 			}
@@ -184,7 +178,7 @@ package org.josht.foxhole.controls
 		
 		protected function updateSelection():void
 		{
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			var xPosition:Number = contentPadding;
 			if(this._selected)
 			{
@@ -218,21 +212,28 @@ package org.josht.foxhole.controls
 		
 		protected function refreshLabelStyles():void
 		{	
-			var textFormat:TextFormat = this.getStyleValue("textFormat") as TextFormat;
-			var embedFonts:Boolean = this.getStyleValue("embedFonts") as Boolean;
+			const showLabels:Boolean = this.getStyleValue("showLabels") as Boolean;
+			if(!showLabels)
+			{
+				this.onLabelField.visible = this.offLabelField.visible = false;
+			}
+			const textFormat:TextFormat = this.getStyleValue("textFormat") as TextFormat;
+			const embedFonts:Boolean = this.getStyleValue("embedFonts") as Boolean;
 			
 			this.onLabelField.setTextFormat(textFormat);
 			this.onLabelField.defaultTextFormat = textFormat;
 			this.onLabelField.embedFonts = embedFonts;
+			this.onLabelField.visible = true;
 			
 			this.offLabelField.setTextFormat(textFormat);
 			this.offLabelField.defaultTextFormat = textFormat;
 			this.offLabelField.embedFonts = embedFonts;
+			this.offLabelField.visible = true;
 		}
 		
 		protected function refreshThumbStyles():void
 		{
-			var thumbStyles:Object = this.getStyleValue("thumbStyles");
+			const thumbStyles:Object = this.getStyleValue("thumbStyles");
 			for(var styleName:String in thumbStyles)
 			{
 				this.thumb.setStyle(styleName, thumbStyles[styleName]);
@@ -286,10 +287,6 @@ package org.josht.foxhole.controls
 			}
 			this._backgroundBounds.x = skin.width;
 			this._backgroundBounds.y = skin.height;
-			if(!this.skin is Bitmap)
-			{
-				this.skin.cacheAsBitmap = true;
-			}
 		}
 		
 		protected function alignBackground():void
@@ -302,7 +299,7 @@ package org.josht.foxhole.controls
 			{
 				this.skin.height = this._backgroundBounds.y;
 			}
-			var skinAlign:String = this.getStyleValue("skinAlign") as String;
+			const skinAlign:String = this.getStyleValue("skinAlign") as String;
 			switch(skinAlign)
 			{
 				case SkinAlign.TOP_LEFT:
@@ -368,7 +365,7 @@ package org.josht.foxhole.controls
 		
 		private function drawThumb():void
 		{
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			this.thumb.y = contentPadding;
 			this.thumb.width = (this._width - 2 * contentPadding) / 2;
 			this.thumb.height = this._height - 2 * contentPadding;
@@ -376,8 +373,8 @@ package org.josht.foxhole.controls
 		
 		private function drawLabels():void
 		{
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			var labelWidth:Number = this._width - this.thumb.width - 2 * contentPadding;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const labelWidth:Number = this._width - this.thumb.width - 2 * contentPadding;
 			
 			this.onLabelField.width = labelWidth;
 			this.onLabelField.height = this.onLabelField.textHeight + 4;
@@ -403,10 +400,10 @@ package org.josht.foxhole.controls
 		
 		private function updateLabelScroll():void
 		{
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			var thumbOffset:Number = this.thumb.x - contentPadding;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const thumbOffset:Number = this.thumb.x - contentPadding;
 			
-			var halfWidth:Number = (this._width - 2 * contentPadding) / 2;
+			const halfWidth:Number = (this._width - 2 * contentPadding) / 2;
 			
 			var onLabelRect:Rectangle = this.onLabelField.scrollRect;
 			onLabelRect.x = halfWidth - thumbOffset;
@@ -439,8 +436,8 @@ package org.josht.foxhole.controls
 		
 		private function thumb_exitFrameHandler():void
 		{
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			var xOffset:Number = this.mouseX - this._mouseStartX;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const xOffset:Number = this.mouseX - this._mouseStartX;
 			var xPosition:Number = this._thumbStartX + xOffset;
 			xPosition = Math.min(Math.max(contentPadding, xPosition), this._width - this.thumb.width - contentPadding);
 			this.thumb.x = xPosition;
@@ -454,7 +451,7 @@ package org.josht.foxhole.controls
 			
 			if(this._thumbStartX != this.thumb.x)
 			{
-				var oldSelected:Boolean = this._selected;
+				const oldSelected:Boolean = this._selected;
 				this.selected = this.thumb.x > (this._width / 4);
 				this._userChange = true;
 				if(this._selected != oldSelected)
