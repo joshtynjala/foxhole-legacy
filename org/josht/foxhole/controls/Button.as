@@ -188,10 +188,10 @@ package org.josht.foxhole.controls
 		
 		override protected function draw():void
 		{
-			var dataInvalid:Boolean = this.isInvalid(InvalidationType.DATA);
-			var stylesInvalid:Boolean = this.isInvalid(InvalidationType.STYLES);
-			var sizeInvalid:Boolean = this.isInvalid(InvalidationType.SIZE);
-			var stateInvalid:Boolean = this.isInvalid(InvalidationType.STATE);
+			const dataInvalid:Boolean = this.isInvalid(InvalidationType.DATA);
+			const stylesInvalid:Boolean = this.isInvalid(InvalidationType.STYLES);
+			const sizeInvalid:Boolean = this.isInvalid(InvalidationType.SIZE);
+			const stateInvalid:Boolean = this.isInvalid(InvalidationType.STATE);
 			
 			if(dataInvalid)
 			{
@@ -199,7 +199,7 @@ package org.josht.foxhole.controls
 			}
 			
 			var contentPaddingChanged:Boolean = false;
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			if(stylesInvalid || stateInvalid)
 			{
 				this.refreshSkins();
@@ -209,8 +209,8 @@ package org.josht.foxhole.controls
 			
 			if(dataInvalid || sizeInvalid || contentPaddingChanged)
 			{
-				var contentWidth:Number = Math.max(this._width - contentPadding * 2);
-				var contentHeight:Number = Math.max(0, this._height - contentPadding * 2);
+				const contentWidth:Number = Math.max(this._width - contentPadding * 2);
+				const contentHeight:Number = Math.max(0, this._height - contentPadding * 2);
 				this.labelField.width = contentWidth;
 				this.labelField.height = Math.min(contentHeight, this.labelField.textHeight + 4);
 				this.labelField.x = contentPadding;
@@ -236,7 +236,7 @@ package org.josht.foxhole.controls
 			
 			if(stylesInvalid || stateInvalid || sizeInvalid)
 			{
-				var scaleSkins:Boolean = this.getStyleValue("scaleSkins") as Boolean;
+				const scaleSkins:Boolean = this.getStyleValue("scaleSkins") as Boolean;
 				if(scaleSkins)
 				{
 					this.scaleSkin();
@@ -252,7 +252,7 @@ package org.josht.foxhole.controls
 		
 		protected function refreshSkins():void
 		{
-			var states:Vector.<String> = this.stateNames;
+			const states:Vector.<String> = this.stateNames;
 			for each(var state:String in states)
 			{
 				var skin:DisplayObject = this._stateToSkin[state];
@@ -317,10 +317,6 @@ package org.josht.foxhole.controls
 				size.x = skin.width;
 				size.y = skin.height;
 				this._stateToDefaultSize[state] = size;
-				if(!(skin is Bitmap))
-				{
-					skin.cacheAsBitmap = true;
-				}
 			}
 			
 			//make sure the label is always on top.
@@ -363,7 +359,7 @@ package org.josht.foxhole.controls
 		
 		protected function alignSkin():void
 		{
-			var stateBounds:Point = this._stateToDefaultSize[this.currentState];
+			const stateBounds:Point = this._stateToDefaultSize[this.currentState];
 			if(this.currentSkin.width != stateBounds.x)
 			{
 				this.currentSkin.width = stateBounds.x;
@@ -372,7 +368,7 @@ package org.josht.foxhole.controls
 			{
 				this.currentSkin.height = stateBounds.y;
 			}
-			var skinAlign:String = this.getStyleValue("skinAlign") as String;
+			const skinAlign:String = this.getStyleValue("skinAlign") as String;
 			switch(skinAlign)
 			{
 				case SkinAlign.TOP_LEFT:
