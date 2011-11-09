@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010 Josh Tynjala
+Copyright (c) 2011 Josh Tynjala
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -27,13 +27,11 @@ package org.josht.foxhole.controls
 	import fl.core.InvalidationType;
 	import fl.core.UIComponent;
 	
-	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.InteractiveObject;
 	import flash.errors.IllegalOperationError;
 	import flash.events.MouseEvent;
-	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
