@@ -81,11 +81,7 @@ package org.josht.foxhole.controls
 			upSkin: "Button_upSkin",
 			downSkin: "Button_downSkin",
 			disabledSkin: "Button_disabledSkin",
-			contentPadding: null,
-			scaleSkins: true,
-			//not used by default, but good to have set as a default for when
-			//the developer set scaleSkins to false
-			skinAlign: SkinAlign.TOP_LEFT
+			contentPadding: null
 		};
 		
 		public static function getStyleDefinition():Object
@@ -234,15 +230,7 @@ package org.josht.foxhole.controls
 			
 			if(stylesInvalid || stateInvalid || sizeInvalid)
 			{
-				const scaleSkins:Boolean = this.getStyleValue("scaleSkins") as Boolean;
-				if(scaleSkins)
-				{
-					this.scaleSkin();
-				}
-				else
-				{
-					this.alignSkin();
-				}
+				this.scaleSkin();
 			}
 			
 			super.draw();
@@ -350,83 +338,6 @@ package org.josht.foxhole.controls
 			if(this.currentSkin.height != this._height)
 			{
 				this.currentSkin.height = this._height;
-			}
-			this.currentSkin.x = 0;
-			this.currentSkin.y = 0;
-		}
-		
-		protected function alignSkin():void
-		{
-			const stateBounds:Point = this._stateToDefaultSize[this.currentState];
-			if(this.currentSkin.width != stateBounds.x)
-			{
-				this.currentSkin.width = stateBounds.x;
-			}
-			if(this.currentSkin.height != stateBounds.y)
-			{
-				this.currentSkin.height = stateBounds.y;
-			}
-			const skinAlign:String = this.getStyleValue("skinAlign") as String;
-			switch(skinAlign)
-			{
-				case SkinAlign.TOP_LEFT:
-				{
-					this.currentSkin.x = 0;
-					this.currentSkin.y = 0;
-					break;
-				}
-				case SkinAlign.TOP_CENTER:
-				{
-					this.currentSkin.x = (this._width - this.currentSkin.width) / 2;
-					this.currentSkin.y = 0;
-					break;
-				}
-				case SkinAlign.TOP_RIGHT:
-				{
-					this.currentSkin.x = this._width - this.currentSkin.width;
-					this.currentSkin.y = 0;
-					break;
-				}
-				case SkinAlign.MIDDLE_LEFT:
-				{
-					this.currentSkin.x = 0;
-					this.currentSkin.y = (this._height - this.currentSkin.height) / 2;
-					break;
-				}
-				case SkinAlign.MIDDLE_CENTER:
-				{
-					this.currentSkin.x = (this._width - this.currentSkin.width) / 2;
-					this.currentSkin.y = (this._height - this.currentSkin.height) / 2;
-					break;
-				}
-				case SkinAlign.MIDDLE_RIGHT:
-				{
-					this.currentSkin.x = this._width - this.currentSkin.width;
-					this.currentSkin.y = (this._height - this.currentSkin.height) / 2;
-					break;
-				}
-				case SkinAlign.BOTTOM_LEFT:
-				{
-					this.currentSkin.x = 0;
-					this.currentSkin.y = this._height - this.currentSkin.height;
-					break;
-				}
-				case SkinAlign.BOTTOM_CENTER:
-				{
-					this.currentSkin.x = (this._width - this.currentSkin.width) / 2;
-					this.currentSkin.y = this._height - this.currentSkin.height;
-					break;
-				}
-				case SkinAlign.BOTTOM_RIGHT:
-				{
-					this.currentSkin.x = this._width - this.currentSkin.width;
-					this.currentSkin.y = this._height - this.currentSkin.height;
-					break;
-				}
-				default:
-				{
-					throw new IllegalOperationError("Unknown skin alignment value: " + skinAlign);
-				}
 			}
 		}
 		
