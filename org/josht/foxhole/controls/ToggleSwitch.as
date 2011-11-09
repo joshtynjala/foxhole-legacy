@@ -45,12 +45,11 @@ package org.josht.foxhole.controls
 	{
 		private static var defaultStyles:Object =
 		{
-			showLabels: true,
-			skin: "Button_upSkin",
+			onSkin: "Button_upSkin",
+			offSkin: "Button_upSkin",
 			thumbStyles: null,
 			contentPadding: null,
-			scaleSkin: true,
-			skinAlign: SkinAlign.TOP_LEFT
+			showLabels: true
 		};
 		
 		public static function getStyleDefinition():Object
@@ -64,10 +63,16 @@ package org.josht.foxhole.controls
 			this.addEventListener(MouseEvent.CLICK, clickHandler);
 		}
 		
-		protected var skin:DisplayObject;
+		protected var onSkin:DisplayObject;
+		protected var offSkin:DisplayObject;
+		protected var sampleThumbSkin:DisplayObject;
 		protected var thumb:Button;
 		protected var onLabelField:TextField;
 		protected var offLabelField:TextField;
+		
+		protected var onSkinOriginalHeight:Number = NaN;
+		protected var offSkinOriginalHeight:Number = NaN;
+		protected var sampleThumbSkinOriginalHeight:Number = NaN;
 		
 		private var _backgroundBounds:Point;
 		
@@ -142,18 +147,7 @@ package org.josht.foxhole.controls
 			
 			if(stylesInvalid || sizeInvalid)
 			{
-				const scaleSkin:Boolean = this.getStyleValue("scaleSkin") as Boolean;
-				if(scaleSkin)
-				{
-					this.skin.x = 0;
-					this.skin.y = 0;
-					this.skin.width = this._width;
-					this.skin.height = this._height;
-				}
-				else
-				{
-					this.alignBackground();
-				}
+				this.scaleSkins();
 			}
 			
 			if(sizeInvalid || contentPaddingChanged)
@@ -206,6 +200,7 @@ package org.josht.foxhole.controls
 			else
 			{
 				this.thumb.x = xPosition;
+				this.updateSkinOrderBasedOnThumb();
 			}
 			this._userChange = false;
 		}
@@ -216,6 +211,7 @@ package org.josht.foxhole.controls
 			if(!showLabels)
 			{
 				this.onLabelField.visible = this.offLabelField.visible = false;
+				return;
 			}
 			const textFormat:TextFormat = this.getStyleValue("textFormat") as TextFormat;
 			const embedFonts:Boolean = this.getStyleValue("embedFonts") as Boolean;
@@ -242,7 +238,16 @@ package org.josht.foxhole.controls
 		
 		protected function refreshSkins():void
 		{
-			var skinStyle:Object = this.getStyleValue("skin");
+			const thumbStyles:Object = this.getStyleValue("thumbStyles");
+			this.refreshSkin("sampleThumbSkin", thumbStyles.upSkin);
+			this.sampleThumbSkin.visible = false;
+			
+			this.refreshSkin("onSkin", this.getStyleValue("onSkin"));
+			this.refreshSkin("offSkin", this.getStyleValue("offSkin"));
+		}
+		
+		protected function refreshSkin(skinVariableName:String, skinStyle:Object):void
+		{
 			if(!skinStyle)
 			{
 				throw new IllegalOperationError("Skin must be defined.");
@@ -251,29 +256,31 @@ package org.josht.foxhole.controls
 			{
 				skinStyle = getDefinitionByName(skinStyle as String) as Class;
 			}
+			var oldSkin:DisplayObject = this[skinVariableName];
 			if(skinStyle is Class)
 			{
 				var SkinType:Class = Class(skinStyle);
-				if(!(this.skin is SkinType))
+				if(!(oldSkin is SkinType))
 				{
-					if(this.skin)
+					if(oldSkin)
 					{
-						this.removeChild(this.skin);
+						this.removeChild(oldSkin);
 					}
-					this.skin = new SkinType();
-					this.addChildAt(this.skin, 0);
+					var newSkin:DisplayObject = new SkinType();
+					this[skinVariableName] = newSkin;
+					this.addChildAt(newSkin, 0);
 				}
 			}
 			else if(skinStyle is DisplayObject)
 			{
-				if(this.skin != skinStyle)
+				if(oldSkin != skinStyle)
 				{
-					if(this.skin)
+					if(oldSkin)
 					{
-						this.removeChild(this.skin);
+						this.removeChild(oldSkin);
 					}
-					this.skin = DisplayObject(skinStyle);
-					this.addChildAt(this.skin, 0);
+					this[skinVariableName] = newSkin = DisplayObject(skinStyle);
+					this.addChildAt(newSkin, 0);
 				}
 			}
 			else
@@ -281,100 +288,44 @@ package org.josht.foxhole.controls
 				throw new IllegalOperationError("Unknown skin type: " + skinStyle);
 			}
 			
-			if(!this._backgroundBounds)
+			if(newSkin)
 			{
-				this._backgroundBounds = new Point();
+				this[skinVariableName + "OriginalHeight"] = newSkin.height;
 			}
-			this._backgroundBounds.x = skin.width;
-			this._backgroundBounds.y = skin.height;
 		}
 		
-		protected function alignBackground():void
+		private function scaleSkins():void
 		{
-			if(this.skin.width != this._backgroundBounds.x)
+			const skinScale:Number = this._height / Math.max(this.onSkinOriginalHeight, this.offSkinOriginalHeight);
+			if(this.onSkin.scaleX != skinScale)
 			{
-				this.skin.width = this._backgroundBounds.x;
+				this.onSkin.scaleX = this.onSkin.scaleY = skinScale;
 			}
-			if(this.skin.height != this._backgroundBounds.y)
+			if(this.offSkin.scaleX != skinScale)
 			{
-				this.skin.height = this._backgroundBounds.y;
+				this.offSkin.scaleX = this.offSkin.scaleY = skinScale;
 			}
-			const skinAlign:String = this.getStyleValue("skinAlign") as String;
-			switch(skinAlign)
-			{
-				case SkinAlign.TOP_LEFT:
-				{
-					this.skin.x = 0;
-					this.skin.y = 0;
-					break;
-				}
-				case SkinAlign.TOP_CENTER:
-				{
-					this.skin.x = (this._width - this.skin.width) / 2;
-					this.skin.y = 0;
-					break;
-				}
-				case SkinAlign.TOP_RIGHT:
-				{
-					this.skin.x = this._width - this.skin.width;
-					this.skin.y = 0;
-					break;
-				}
-				case SkinAlign.MIDDLE_LEFT:
-				{
-					this.skin.x = 0;
-					this.skin.y = (this._height - this.skin.height) / 2;
-					break;
-				}
-				case SkinAlign.MIDDLE_CENTER:
-				{
-					this.skin.x = (this._width - this.skin.width) / 2;
-					this.skin.y = (this._height - this.skin.height) / 2;
-					break;
-				}
-				case SkinAlign.MIDDLE_RIGHT:
-				{
-					this.skin.x = this._width - this.skin.width;
-					this.skin.y = (this._height - this.skin.height) / 2;
-					break;
-				}
-				case SkinAlign.BOTTOM_LEFT:
-				{
-					this.skin.x = 0;
-					this.skin.y = this._height - this.skin.height;
-					break;
-				}
-				case SkinAlign.BOTTOM_CENTER:
-				{
-					this.skin.x = (this._width - this.skin.width) / 2;
-					this.skin.y = this._height - this.skin.height;
-					break;
-				}
-				case SkinAlign.BOTTOM_RIGHT:
-				{
-					this.skin.x = this._width - this.skin.width;
-					this.skin.y = this._height - this.skin.height;
-					break;
-				}
-				default:
-				{
-					throw new IllegalOperationError("Unknown background alignment value: " + skinAlign);
-				}
-			}
+			
+			this.onSkin.x = 0;
+			this.offSkin.x = this._width - this.offSkin.width;
+			this.offSkin.y = this.onSkin.y = 0;
 		}
 		
 		private function drawThumb():void
 		{
 			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			this.thumb.y = contentPadding;
-			this.thumb.width = (this._width - 2 * contentPadding) / 2;
-			this.thumb.height = this._height - 2 * contentPadding;
+			
+			const thumbHeight:Number = this._height - 2 * contentPadding;
+			const thumbScale:Number = thumbHeight / sampleThumbSkinOriginalHeight;
+			this.thumb.height = thumbHeight;			
+			this.thumb.width = sampleThumbSkin.width * thumbScale;
 		}	
 		
 		private function drawLabels():void
 		{
 			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			const labelWidth:Number = this._width - this.thumb.width - 2 * contentPadding;
+			const labelWidth:Number = Math.max(0, this._width - this.thumb.width - 4 * contentPadding);
 			
 			this.onLabelField.width = labelWidth;
 			this.onLabelField.height = this.onLabelField.textHeight + 4;
@@ -389,13 +340,28 @@ package org.josht.foxhole.controls
 			this.offLabelField.width = labelWidth;
 			this.offLabelField.height = this.onLabelField.textHeight + 4;
 			var offScrollRect:Rectangle = this.offLabelField.scrollRect;
-			this.offLabelField.text = "OFF";
 			offScrollRect.width = labelWidth;
 			offScrollRect.height = this.offLabelField.textHeight + 4;
 			this.offLabelField.scrollRect = offScrollRect;
 			
-			this.offLabelField.x = contentPadding + labelWidth;
+			this.offLabelField.x = this._width - contentPadding - labelWidth;
 			this.offLabelField.y = (this._height - this.offLabelField.textHeight - 4) / 2;
+		}
+		
+		private function updateSkinOrderBasedOnThumb():void
+		{
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const positionRatio:Number = (this.thumb.x - contentPadding) / (this._width - this.thumb.width - 2 * contentPadding);
+			const offSkinIndex:int = this.getChildIndex(this.offSkin);
+			const onSkinIndex:int = this.getChildIndex(this.onSkin);
+			if(positionRatio > 0.5 && offSkinIndex != 0)
+			{
+				this.setChildIndex(this.offSkin, 0);
+			}
+			else if(positionRatio <= 0.5 && offSkinIndex != 1)
+			{
+				this.setChildIndex(this.offSkin, 1);
+			}
 		}
 		
 		private function updateLabelScroll():void
@@ -438,10 +404,11 @@ package org.josht.foxhole.controls
 		{
 			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			const xOffset:Number = this.mouseX - this._mouseStartX;
-			var xPosition:Number = this._thumbStartX + xOffset;
-			xPosition = Math.min(Math.max(contentPadding, xPosition), this._width - this.thumb.width - contentPadding);
+			const xPosition:Number = Math.min(Math.max(contentPadding, this._thumbStartX + xOffset),
+				this._width - this.thumb.width - 2 * contentPadding);
 			this.thumb.x = xPosition;
 			this.updateLabelScroll();
+			this.updateSkinOrderBasedOnThumb();
 		}
 		
 		private function stage_mouseUpHandler(event:MouseEvent):void
@@ -469,6 +436,7 @@ package org.josht.foxhole.controls
 		private function selectionTween_onChange(tween:GTween):void
 		{
 			this.updateLabelScroll();
+			this.updateSkinOrderBasedOnThumb();
 		}
 		
 		private function selectionTween_onComplete(tween:GTween):void
