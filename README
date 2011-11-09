@@ -4,21 +4,28 @@
  / __/ / /_/ /   |/ __  / /_/ / /___/ /___   
 /_/    \____/_/|_/_/ /_/\____/_____/_____/
 
-Foxhole UI controls for mobile Flash development. Optimized for Adobe's Packager for iPhone.
+Foxhole UI controls for Adobe AIR mobile development. They're all designed with Adobe AIR's gpu renderMode in mind. Recommended for AIR 2.7 or newer across all platforms.
 
-They’re based on fl.core.UIComponent, mostly for convenience so that I didn’t have to rewrite the style system and stuff. The code is probably not well documented, and there are only a few components based on what I actually needed:
+These controls extend fl.core.UIComponent, which Adobe includes with Flash Professional. I made this decision mostly for convenience because I wanted to avoid rewriting invalidation, the style system, and other stuff like that.
+
+The following components are currently available:
 
 Button
-ToggleButton (I used this one to make a primitive TabBar... see also: ToggleGroup)
-Switch (on/off)
+A typical button control with up, down, and disabled states (no over on mobile)
+
+ToggleButton
+Adds selected states to Button. May be combined with ToggleGroup for things like a tab bar or a radio group.
+
+ToggleSwitch
+A sliding on/off switch, similar to what's available on iOS.
+
+Slider
+A typical horizontal or vertical slider control.
+
 TouchList
+A touch-based, vertical list control. Has elastic edges and you can "fling" it.
 
-They all assume that renderMode is gpu. Everything performs well, even on the original iPhone.
+TouchScroller
+Similar to the list, but it may hold arbitary content and scroll in either direction.
 
-A couple tips for TouchList:
-
-1) Make sure your CellRenderer sets cacheAsBitmap on itself or its children. The list doesn’t do it automatically because complex renderers might be able to optimize their own content better.
-
-2) There’s a property to clip the TouchList content, but for best performance, cover up the edges with other chrome instead.
-
-Enjoy! MIT-licensed. No future support or maintenance is guaranteed. I just wanted to get these out there.
+Enjoy!
