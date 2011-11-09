@@ -40,8 +40,9 @@ package org.josht.foxhole.controls
 	import flash.utils.getDefinitionByName;
 	
 	import org.josht.foxhole.core.FrameTicker;
+	import org.josht.foxhole.core.IToggle;
 	
-	public class ToggleSwitch extends UIComponent
+	public class ToggleSwitch extends UIComponent implements IToggle
 	{
 		private static var defaultStyles:Object =
 		{
