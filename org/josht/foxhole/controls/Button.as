@@ -206,10 +206,10 @@ package org.josht.foxhole.controls
 			
 			if(dataInvalid || sizeInvalid || contentPaddingChanged)
 			{
-				const contentWidth:Number = Math.max(this._width - contentPadding * 2);
+				const contentWidth:Number = Math.max(0, this._width - contentPadding * 2);
 				const contentHeight:Number = Math.max(0, this._height - contentPadding * 2);
 				this.labelField.width = contentWidth;
-				this.labelField.height = Math.min(contentHeight, this.labelField.textHeight + 4);
+				this.labelField.height = this.labelField.textHeight + 4;
 				this.labelField.x = contentPadding;
 				this.labelField.y = Math.round((this._height - this.labelField.height) / 2);
 			}
