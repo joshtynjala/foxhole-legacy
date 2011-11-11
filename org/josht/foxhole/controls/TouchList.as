@@ -36,6 +36,7 @@ package org.josht.foxhole.controls
 	import fl.events.ScrollEvent;
 	import fl.video.ReconnectClient;
 	
+	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
 	import flash.display.InteractiveObject;
 	import flash.display.Shape;
@@ -108,13 +109,6 @@ package org.josht.foxhole.controls
 	 */
 	[Event(name="scroll", type="flash.events.Event")]
 	
-	/**
-	 * The padding that separates the border of the list from its contents, in pixels.
-	 *
-	 * @default null
-	 */
-	[Style(name="contentPadding", type="Number", format="Length")]
-	
 	
 	//--------------------------------------
 	//  Styles
@@ -135,12 +129,19 @@ package org.josht.foxhole.controls
 	 */
 	[Style(name="cellRenderer", type="Class")]
 	
+	/**
+	 * The padding that separates the border of the list from its contents, in pixels.
+	 *
+	 * @default null
+	 */
+	[Style(name="contentPadding", type="Number", format="Length")]
+	
 	public class TouchList extends UIComponent
 	{
 		
-		//--------------------------------------
-		//  Static Properties
-		//--------------------------------------
+	//--------------------------------------
+	//  Static Properties
+	//--------------------------------------
 		
 		private static const MINIMUM_DISTANCE:Number = 20;
 		private static const PIXELS_PER_MS:Number = 0.4;
@@ -161,9 +162,9 @@ package org.josht.foxhole.controls
 			return mergeStyles(defaultStyles, UIComponent.getStyleDefinition());
 		}
 		
-		//--------------------------------------
-		//  Constructor
-		//--------------------------------------
+	//--------------------------------------
+	//  Constructor
+	//--------------------------------------
 		
 		public function TouchList()
 		{
@@ -172,12 +173,11 @@ package org.josht.foxhole.controls
 			this.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
 		}
 		
-		//--------------------------------------
-		//  Properties
-		//--------------------------------------
+	//--------------------------------------
+	//  Properties
+	//--------------------------------------
 		
 		private var _background:DisplayObject;
-		//private var _content:Sprite;
 		
 		private var _verticalScrollPosition:Number = 0;
 		
@@ -226,6 +226,36 @@ package org.josht.foxhole.controls
 				this._dataProvider.addEventListener(DataChangeEvent.DATA_CHANGE, dataProvider_dataChangeHandler);
 			}
 			this.verticalScrollPosition = 0; //reset the scroll position
+			this.invalidate(InvalidationType.DATA);
+		}
+		
+		private var _labelField:String = "label";
+		
+		public function get labelField():String
+		{
+			return this._labelField;
+		}
+		
+		public function set labelField(value:String):void
+		{
+			if(this._labelField == value)
+			{
+				return;
+			}
+			this._labelField = value;
+			this.invalidate(InvalidationType.DATA);
+		}
+		
+		private var _labelFunction:Function;
+		
+		public function get labelFunction():Function
+		{
+			return this._labelFunction;
+		}
+		
+		public function set labelFunction(value:Function):void
+		{
+			this._labelFunction = value;
 			this.invalidate(InvalidationType.DATA);
 		}
 		
@@ -298,7 +328,7 @@ package org.josht.foxhole.controls
 			this.selectedIndex = this._dataProvider.getItemIndex(value);
 		}
 		
-		private var _clipContent:Boolean = true;
+		private var _clipContent:Boolean = false;
 
 		public function get clipContent():Boolean
 		{
@@ -328,18 +358,9 @@ package org.josht.foxhole.controls
 		private var _activeRenderers:Vector.<ICellRenderer> = new Vector.<ICellRenderer>;
 		private var _rendererMap:Dictionary = new Dictionary(true);
 		
-		//--------------------------------------
-		//  Protected Methods
-		//--------------------------------------
-		
-		override protected function configUI():void
-		{
-			super.configUI();
-			
-			//holds all the renderers
-			//this._content = new Sprite();
-			//this.addChild(this._content);
-		}
+	//--------------------------------------
+	//  Protected Methods
+	//--------------------------------------
 		
 		override protected function draw():void
 		{
@@ -354,11 +375,8 @@ package org.josht.foxhole.controls
 			if(stylesInvalid)
 			{
 				var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-				//if(this._content.x != contentPadding)
-				{
-					sizeInvalid = true;
-					scrollInvalid = true;
-				}
+				sizeInvalid = true;
+				scrollInvalid = true;
 				
 				this.refreshBackground();
 				cellRendererTypeIsInvalid = this.hasCellRendererTypeChanged();
@@ -368,11 +386,6 @@ package org.josht.foxhole.controls
 			{
 				this.handleResize();
 			}
-			
-			/*if(sizeInvalid || maskInvalid)
-			{
-				this.refreshClippedContent();
-			}*/
 			
 			if(dataInvalid || sizeInvalid || cellRendererTypeIsInvalid)
 			{
@@ -404,9 +417,26 @@ package org.josht.foxhole.controls
 			super.draw();
 		}
 		
-		//--------------------------------------
-		//  Private Methods
-		//--------------------------------------
+		protected function getItemLabel(item:Object):String
+		{
+			if(this._labelFunction != null)
+			{
+				return this._labelFunction(item) as String;
+			}
+			else if(this._labelField != null)
+			{
+				return item[this._labelField] as String;
+			}
+			else if(item)
+			{
+				return item.toString();
+			}
+			return "";
+		}
+		
+	//--------------------------------------
+	//  Private Methods
+	//--------------------------------------
 		
 		private function hasCellRendererTypeChanged():Boolean
 		{
@@ -435,31 +465,6 @@ package org.josht.foxhole.controls
 				this._maxVerticalScrollPosition = 0;
 			}
 		}
-		
-		/*private function refreshClippedContent():void
-		{
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			var availableWidth:Number = this._width - 2 * contentPadding;
-			var availableHeight:Number = this._height - 2 * contentPadding;
-			
-			//use a scrollRect on _content
-			if(this._clipContent)
-			{
-				//reuse the existing scrollRect instead of creating a new object
-				var scrollRect:Rectangle = this._content.scrollRect;
-				if(!scrollRect)
-				{
-					scrollRect = new Rectangle();
-				}
-				scrollRect.width = availableWidth;
-				scrollRect.height = availableHeight;
-				this._content.scrollRect = scrollRect;
-			}
-			else if(scrollRect)
-			{
-				this._content.scrollRect = null;
-			}
-		}*/
 		
 		private function refreshSelection():void
 		{
@@ -499,7 +504,10 @@ package org.josht.foxhole.controls
 				
 				if(this._background)
 				{
-					this._background.cacheAsBitmap = true;
+					if(!(this._background is Bitmap))
+					{
+						this._background.cacheAsBitmap = true;
+					}
 					this.addChildAt(this._background, 0);
 				}
 			}
@@ -518,28 +526,10 @@ package org.josht.foxhole.controls
 					this._background.height = this._height;
 				}
 			}
-			
-			//this._content.x = contentPadding;
-			//this._content.y = contentPadding;
 		}
 		
 		private function scrollContent():void
 		{	
-			/*var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			var scrollRect:Rectangle = this._content.scrollRect;
-			if(scrollRect)
-			{
-				scrollRect.y = this._verticalScrollPosition;
-				this._content.scrollRect = scrollRect;
-				if(this._content.y != contentPadding)
-				{
-					this._content.y = contentPadding;
-				}
-			}
-			else
-			{
-				this._content.y = contentPadding - this._verticalScrollPosition;
-			}*/
 			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			var availableHeight:Number = this._height - 2 * contentPadding;
 			var positionY:Number = -this._verticalScrollPosition + contentPadding;
@@ -680,7 +670,6 @@ package org.josht.foxhole.controls
 				var renderer:ICellRenderer = this._inactiveRenderers.shift();
 				var interactiveRenderer:InteractiveObject = InteractiveObject(renderer);
 				interactiveRenderer.removeEventListener(MouseEvent.CLICK, renderer_clickHandler);
-				//this._content.removeChild(DisplayObject(renderer));
 				this.removeChild(DisplayObject(renderer));
 			}
 		}
@@ -692,22 +681,19 @@ package org.josht.foxhole.controls
 				var renderer:ICellRenderer = new CellRendererType();
 				var interactiveRenderer:InteractiveObject = InteractiveObject(renderer);
 				interactiveRenderer.addEventListener(MouseEvent.CLICK, renderer_clickHandler);
-				//this._content.addChild(DisplayObject(renderer));
 				this.addChild(DisplayObject(renderer));
 			}
 			else
 			{
 				renderer = this._inactiveRenderers.shift();
 			}
-			renderer.data = item;
-			var listData:ListData = renderer.listData;
-			if(!listData)
+			if(renderer.data != item)
 			{
-				var itemIndex:int = this._dataProvider.getItemIndex(item);
-				//TODO: get label and icon
-				listData = new ListData("", null, this, itemIndex, itemIndex, 0);
+				renderer.data = item;
+				const itemIndex:int = this._dataProvider.getItemIndex(item);
+				const itemLabel:String = this.getItemLabel(item);
+				renderer.listData = new ListData(itemLabel, null, this, itemIndex, itemIndex, 0);
 			}
-			renderer.listData = listData;
 			this._rendererMap[item] = renderer;
 			this._activeRenderers.push(renderer);
 		}
@@ -734,28 +720,54 @@ package org.josht.foxhole.controls
 			}
 		}
 		
-		private function autoScroll():void
+		private function finishScrolling():void
 		{
-			var difference:Number = (this._verticalScrollPosition - this._targetVerticalScrollPosition) * FRICTION;
-			this.verticalScrollPosition -= difference;
-			
-			if(Math.abs(this._verticalScrollPosition - this._targetVerticalScrollPosition) < 1)
+			if(!this._autoScrolling)
 			{
-				this.verticalScrollPosition = this._targetVerticalScrollPosition;
-				if(this._isScrolling)
+				var maxDifference:Number = this._verticalScrollPosition - this._maxVerticalScrollPosition;
+				if(maxDifference > 0)
 				{
-					this.mouseChildren = true;
+					this._autoScrolling = true;
+					FrameTicker.addExitFrameCallback(onTick);
+					this._targetVerticalScrollPosition = this._maxVerticalScrollPosition;
 				}
+				else if(this._verticalScrollPosition < 0)
+				{
+					this._autoScrolling = true;
+					FrameTicker.addExitFrameCallback(onTick);
+					this._targetVerticalScrollPosition = 0;
+				}
+			}
+			else
+			{
+				FrameTicker.removeExitFrameCallback(onTick);
+				this.mouseChildren = true;
 				this._isScrolling = false;
 				this._autoScrolling = false;
-				FrameTicker.removeExitFrameCallback(exitFrameHandler);
 			}
-			this.dispatchEvent(new Event(Event.SCROLL));
 		}
 		
-		//--------------------------------------
-		//  Private Event Handlers
-		//--------------------------------------
+		private function onTick():void
+		{
+			var difference:Number = this._verticalScrollPosition - this._targetVerticalScrollPosition;
+			var offset:Number = difference * FRICTION;
+			this.verticalScrollPosition -= offset;
+			if(Math.abs(difference) < 1)
+			{
+				this.finishScrolling();
+				return;
+			}
+			
+			if(offset != 0)
+			{
+				this._isScrolling = true;
+				this.dispatchEvent(new Event(Event.SCROLL));
+			}
+		}
+		
+	//--------------------------------------
+	//  Private Event Handlers
+	//--------------------------------------
 		
 		private function mouseDownHandler(event:MouseEvent):void
 		{
@@ -763,43 +775,33 @@ package org.josht.foxhole.controls
 			if(this._autoScrolling)
 			{
 				this._autoScrolling = false;
-			}
-			else
-			{
-				FrameTicker.addExitFrameCallback(exitFrameHandler);
+				FrameTicker.removeExitFrameCallback(onTick);
 			}
 			
+			this.stage.addEventListener(MouseEvent.MOUSE_MOVE, stage_mouseMoveHandler, false, 0, true);
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, stage_mouseUpHandler, false, 0, true);
 			this._startTouchTime = getTimer();
 			this._startMouseY = this.mouseY;
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
 		}
 		
-		private function exitFrameHandler():void
+		private function stage_mouseMoveHandler(event:MouseEvent):void
 		{
+			this.mouseChildren = false;
 			if(!this._autoScrolling)
 			{
 				this.updateScrollFromMousePosition();
-			}
-			else
-			{
-				this.autoScroll();
 			}
 		}
 		
 		private function stage_mouseUpHandler(event:MouseEvent):void
 		{
+			this.stage.removeEventListener(MouseEvent.MOUSE_MOVE, stage_mouseMoveHandler);
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_mouseUpHandler);
 			
-			this._autoScrolling = true;
-			if(this._verticalScrollPosition <= 0)
+			if(this._verticalScrollPosition <= 0 || this._verticalScrollPosition >= this._maxVerticalScrollPosition)
 			{
-				this._targetVerticalScrollPosition = 0;
-				return;
-			}
-			else if(this._verticalScrollPosition >= this._maxVerticalScrollPosition)
-			{
-				this._targetVerticalScrollPosition = this._maxVerticalScrollPosition;
+				this.finishScrolling();
 				return;
 			}
 			
