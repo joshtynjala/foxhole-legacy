@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010 Josh Tynjala
+Copyright (c) 2011 Josh Tynjala
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -143,12 +143,19 @@ package org.josht.foxhole.controls
 	 */
 	[Style(name="verticalAlign", type="String")]
 	
+	/**
+	 * The styles to pass to the cell renderers.
+	 *
+	 * @default null
+	 */
+	[Style(name="rendererStyles", type="Object")]
+	
 	public class TouchList extends UIComponent
 	{
 		
-	//--------------------------------------
-	//  Static Properties
-	//--------------------------------------
+		//--------------------------------------
+		//  Static Properties
+		//--------------------------------------
 		
 		private static const MINIMUM_DISTANCE:Number = 20;
 		private static const PIXELS_PER_MS:Number = 0.4;
@@ -169,9 +176,9 @@ package org.josht.foxhole.controls
 			return mergeStyles(defaultStyles, UIComponent.getStyleDefinition());
 		}
 		
-	//--------------------------------------
-	//  Constructor
-	//--------------------------------------
+		//--------------------------------------
+		//  Constructor
+		//--------------------------------------
 		
 		public function TouchList()
 		{
@@ -180,9 +187,9 @@ package org.josht.foxhole.controls
 			this.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
 		}
 		
-	//--------------------------------------
-	//  Properties
-	//--------------------------------------
+		//--------------------------------------
+		//  Properties
+		//--------------------------------------
 		
 		private var _background:DisplayObject;
 		
@@ -336,12 +343,12 @@ package org.josht.foxhole.controls
 		}
 		
 		private var _clipContent:Boolean = false;
-
+		
 		public function get clipContent():Boolean
 		{
 			return this._clipContent;
 		}
-
+		
 		public function set clipContent(value:Boolean):void
 		{
 			if(this._clipContent == value)
@@ -351,7 +358,7 @@ package org.josht.foxhole.controls
 			this._clipContent = value;
 			this.invalidate(CLIPPING_INVALID);
 		}
-
+		
 		
 		private var _startTouchTime:int;
 		private var _startMouseY:Number;
@@ -365,9 +372,9 @@ package org.josht.foxhole.controls
 		private var _activeRenderers:Vector.<ICellRenderer> = new Vector.<ICellRenderer>;
 		private var _rendererMap:Dictionary = new Dictionary(true);
 		
-	//--------------------------------------
-	//  Protected Methods
-	//--------------------------------------
+		//--------------------------------------
+		//  Protected Methods
+		//--------------------------------------
 		
 		override protected function configUI():void
 		{
@@ -418,6 +425,22 @@ package org.josht.foxhole.controls
 				this.drawRenderers();
 			}
 			
+			if(dataInvalid || sizeInvalid || cellRendererTypeIsInvalid || stylesInvalid)
+			{
+				const rendererStyles:Object = this.getStyleValue("rendererStyles");
+				for(var styleName:String in rendererStyles)
+				{
+					var styleValue:Object = rendererStyles[styleName];
+					for each(var renderer:ICellRenderer in this._activeRenderers)
+					{
+						if(renderer is UIComponent)
+						{
+							UIComponent(renderer).setStyle(styleName, styleValue);
+						}
+					}
+				}
+			}
+			
 			if(selectionInvalid)
 			{
 				this.refreshSelection();
@@ -458,9 +481,9 @@ package org.josht.foxhole.controls
 			return "";
 		}
 		
-	//--------------------------------------
-	//  Private Methods
-	//--------------------------------------
+		//--------------------------------------
+		//  Private Methods
+		//--------------------------------------
 		
 		private function hasCellRendererTypeChanged():Boolean
 		{
@@ -636,15 +659,12 @@ package org.josht.foxhole.controls
 		{	
 			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			var contentWidth:Number = this._width - 2 * contentPadding;
-			//var positionY:Number = 0;
 			var itemCount:int = this._dataProvider ? this._dataProvider.length : 0;
 			for(var i:int = 0; i < itemCount; i++)
 			{
 				var item:Object = this._dataProvider.getItemAt(i);
 				var renderer:ICellRenderer = this.itemToCellRenderer(item);
-				//renderer.y = positionY;
 				renderer.setSize(contentWidth, this._rowHeight);
-				//positionY += this._rowHeight;
 			}
 		}
 		
@@ -815,9 +835,9 @@ package org.josht.foxhole.controls
 			}
 		}
 		
-	//--------------------------------------
-	//  Private Event Handlers
-	//--------------------------------------
+		//--------------------------------------
+		//  Private Event Handlers
+		//--------------------------------------
 		
 		private function mouseDownHandler(event:MouseEvent):void
 		{
