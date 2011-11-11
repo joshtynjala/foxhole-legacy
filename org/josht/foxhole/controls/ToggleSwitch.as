@@ -102,6 +102,9 @@ package org.josht.foxhole.controls
 		{
 			super.configUI();
 			
+			this._width = 80;
+			this._height = 22;
+			
 			if(!this.offLabelField)
 			{
 				this.offLabelField = new TextField();

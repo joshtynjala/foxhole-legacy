@@ -232,6 +232,9 @@ package org.josht.foxhole.controls
 		{
 			super.configUI();
 			
+			this._width = 320;
+			this._height = 320;
+			
 			this._contentContainer = new Sprite();
 			this.addChild(this._contentContainer);
 		}

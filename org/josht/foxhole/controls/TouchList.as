@@ -362,6 +362,14 @@ package org.josht.foxhole.controls
 	//  Protected Methods
 	//--------------------------------------
 		
+		override protected function configUI():void
+		{
+			super.configUI();
+			
+			this._width = 320;
+			this._height = 320;
+		}
+		
 		override protected function draw():void
 		{
 			var sizeInvalid:Boolean = this.isInvalid(InvalidationType.SIZE);

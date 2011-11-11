@@ -150,6 +150,9 @@ package org.josht.foxhole.controls
 		{
 			super.configUI();
 			
+			this._width = 160;
+			this._height = 22;
+			
 			if(!this._button)
 			{
 				this._button = new Button();
