@@ -136,6 +136,13 @@ package org.josht.foxhole.controls
 	 */
 	[Style(name="contentPadding", type="Number", format="Length")]
 	
+	/**
+	 * The alignment of the list items when their combined height is smaller than the total height of the list.
+	 *
+	 * @default "top"
+	 */
+	[Style(name="verticalAlign", type="String")]
+	
 	public class TouchList extends UIComponent
 	{
 		
@@ -154,7 +161,7 @@ package org.josht.foxhole.controls
 			skin: "List_skin",
 			cellRenderer: CellRenderer,
 			contentPadding: null,
-			scaleSkin: false
+			verticalAlign: "top"
 		};
 		
 		public static function getStyleDefinition():Object
@@ -259,7 +266,7 @@ package org.josht.foxhole.controls
 			this.invalidate(InvalidationType.DATA);
 		}
 		
-		private var _rowHeight:Number = 30;
+		private var _rowHeight:Number = NaN;
 		
 		public function get rowHeight():Number
 		{
@@ -397,6 +404,15 @@ package org.josht.foxhole.controls
 			
 			if(dataInvalid || sizeInvalid || cellRendererTypeIsInvalid)
 			{
+				if((dataInvalid || cellRendererTypeIsInvalid) && this._dataProvider.length > 0 && isNaN(this._rowHeight))
+				{
+					const CellRendererType:Class = this.getStyleValue("cellRenderer") as Class;
+					if(CellRendererType)
+					{
+						const typicalRenderer:ICellRenderer = new CellRendererType();
+						this._rowHeight = Object(typicalRenderer).hasOwnProperty("height") ? typicalRenderer["height"] : NaN;
+					}
+				}
 				this.refreshScrollBounds();
 				this.refreshRenderers(cellRendererTypeIsInvalid);
 				this.drawRenderers();
@@ -538,11 +554,37 @@ package org.josht.foxhole.controls
 		
 		private function scrollContent():void
 		{	
-			var contentPadding:Number = this.getStyleValue("contentPadding") as Number;
-			var availableHeight:Number = this._height - 2 * contentPadding;
-			var positionY:Number = -this._verticalScrollPosition + contentPadding;
-			var itemCount:int = this._dataProvider ? this._dataProvider.length : 0;
-			var maxNonClippedPositionY:Number = contentPadding + availableHeight - this._rowHeight;
+			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
+			const availableHeight:Number = this._height - 2 * contentPadding;
+			const itemCount:int = this._dataProvider ? this._dataProvider.length : 0;
+			const totalItemHeight:Number = itemCount * this._rowHeight;
+			const maxNonClippedPositionY:Number = contentPadding + availableHeight - this._rowHeight;
+			if(totalItemHeight > availableHeight)
+			{
+				var positionY:Number = -this._verticalScrollPosition + contentPadding;
+			}
+			else
+			{
+				const verticalAlign:String = this.getStyleValue("verticalAlign") as String;
+				switch(verticalAlign)
+				{
+					case "middle":
+					{
+						positionY = contentPadding + (availableHeight - totalItemHeight) / 2;
+						break;
+					}
+					case "bottom":
+					{
+						positionY = contentPadding + availableHeight - totalItemHeight;
+						break;
+					}
+					default:
+					{
+						positionY = contentPadding;
+					}
+				}
+				positionY -= this._verticalScrollPosition;
+			}
 			for(var i:int = 0; i < itemCount; i++)
 			{
 				var item:Object = this._dataProvider.getItemAt(i);
