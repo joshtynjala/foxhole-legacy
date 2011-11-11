@@ -25,6 +25,9 @@ A typical horizontal or vertical slider control.
 TouchList
 A touch-based, vertical list control. Has elastic edges and you can "fling" it.
 
+PickerList
+A control like a combo box. The list appears as a fullscreen overlay on top of the stage.
+
 TouchScroller
 Similar to the list, but it may hold arbitary content and scroll in either direction.
 
