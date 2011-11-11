@@ -7,6 +7,7 @@ package org.josht.foxhole.core
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Shape;
+	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.errors.IllegalOperationError;
 	import flash.events.Event;
@@ -48,7 +49,7 @@ package org.josht.foxhole.core
 				}
 			}
 			
-			const overlay:Shape = new Shape();
+			const overlay:Sprite = new Sprite();
 			if(bitmapData)
 			{
 				overlay.graphics.beginBitmapFill(bitmapData);
@@ -70,7 +71,7 @@ package org.josht.foxhole.core
 		
 		public static function removePopUp(popUp:DisplayObject):void
 		{
-			const overlay:Shape = Shape(POPUP_TO_OVERLAY[popUp]);
+			const overlay:Sprite = Sprite(POPUP_TO_OVERLAY[popUp]);
 			if(!overlay)
 			{
 				throw IllegalOperationError("Cannot remove display object as pop up because it is not a pop up.");
