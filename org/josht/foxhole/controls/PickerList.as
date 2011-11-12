@@ -30,7 +30,9 @@ package org.josht.foxhole.controls
 	import fl.data.DataProvider;
 	
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.ui.Keyboard;
 	
 	import org.josht.foxhole.core.PopUpManager;
 	
@@ -267,18 +269,38 @@ package org.josht.foxhole.controls
 			return "";
 		}
 		
+		private function closePopUpList():void
+		{
+			this.stage.removeEventListener(KeyboardEvent.KEY_DOWN, stage_keyDownHandler);
+			this.stage.removeEventListener(Event.RESIZE, stage_resizeHandler);
+			PopUpManager.removePopUp(this._list);
+		}
+		
 		private function button_clickHandler(event:MouseEvent):void
 		{
 			PopUpManager.addPopUp(this._list, this.stage, false);
 			this.stage.addEventListener(Event.RESIZE, stage_resizeHandler, false, 0, true);
+			this.stage.addEventListener(KeyboardEvent.KEY_DOWN, stage_keyDownHandler, false, int.MAX_VALUE, true);
 		}
 		
 		private function list_changeHandler(event:Event):void
 		{
-			this.stage.removeEventListener(Event.RESIZE, stage_resizeHandler);
-			PopUpManager.removePopUp(this._list);
+			this.closePopUpList();
 			this.selectedIndex = this._list.selectedIndex;
 			this.dispatchEvent(new Event(Event.CHANGE));
+		}
+		
+		private function stage_keyDownHandler(event:KeyboardEvent):void
+		{
+			if(event.keyCode != Keyboard.BACK)
+			{
+				return;
+			}
+			//don't let the OS handle the event
+			event.preventDefault();
+			//don't let other event handlers handle the event
+			event.stopImmediatePropagation();
+			this.closePopUpList();
 		}
 		
 		private function stage_resizeHandler(event:Event):void
