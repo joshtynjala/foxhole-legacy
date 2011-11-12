@@ -4,9 +4,11 @@
  / __/ / /_/ /   |/ __  / /_/ / /___/ /___   
 /_/    \____/_/|_/_/ /_/\____/_____/_____/
 
-Foxhole UI controls for Adobe AIR mobile development. They're all designed with Adobe AIR's gpu renderMode in mind. Recommended for AIR 2.7 or newer across all platforms.
+Foxhole UI controls for Adobe AIR mobile development, created by Josh Tynjala. I'm building and extending these controls as I need them for my mobile projects, which are mostly games. Documentation is sparse. I may completely change APIs on a whim. They're not necessarily fully featured. Use at your own risk.
 
-These controls extend fl.core.UIComponent, which Adobe includes with Flash Professional. I made this decision mostly for convenience because I wanted to avoid rewriting invalidation, the style system, and other stuff like that.
+Expected to be used with AIR 2.7 or newer. Best performance using "<renderMode>gpu</renderMode>" with Bitmap skins. CAB and CABM are not required as Bitmap has been heavily optimized in recent versions of AIR.
+
+These controls extend fl.core.UIComponent, which Adobe includes with Flash Professional. I made this decision mostly for convenience because I wanted to avoid rewriting invalidation, the style system, and other stuff like that. This choice is subject to change because there are a lot of things I don't like about the fl.* components.
 
 The following components are currently available:
 
