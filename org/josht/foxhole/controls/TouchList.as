@@ -157,7 +157,7 @@ package org.josht.foxhole.controls
 		//  Static Properties
 		//--------------------------------------
 		
-		private static const MINIMUM_DISTANCE:Number = 20;
+		private static const MINIMUM_DISTANCE:Number = 10;
 		private static const PIXELS_PER_MS:Number = 0.4;
 		private static const FRICTION:Number = 0.5;
 		
@@ -367,6 +367,7 @@ package org.josht.foxhole.controls
 		
 		private var _autoScrolling:Boolean = false;
 		private var _isScrolling:Boolean = false;
+		private var _isMoving:Boolean = false;
 		
 		private var _inactiveRenderers:Vector.<ICellRenderer> = new Vector.<ICellRenderer>;
 		private var _activeRenderers:Vector.<ICellRenderer> = new Vector.<ICellRenderer>;
@@ -411,7 +412,7 @@ package org.josht.foxhole.controls
 			
 			if(dataInvalid || sizeInvalid || cellRendererTypeIsInvalid)
 			{
-				if((dataInvalid || cellRendererTypeIsInvalid) && this._dataProvider.length > 0 && isNaN(this._rowHeight))
+				if((dataInvalid || cellRendererTypeIsInvalid) && this._dataProvider && this._dataProvider.length > 0 && isNaN(this._rowHeight))
 				{
 					const CellRendererType:Class = this.getStyleValue("cellRenderer") as Class;
 					if(CellRendererType)
@@ -449,7 +450,7 @@ package org.josht.foxhole.controls
 			var rendererCount:int = this._activeRenderers.length;
 			for(var i:int = 0; i < rendererCount; i++)
 			{
-				var renderer:ICellRenderer = this._activeRenderers[i];
+				renderer = this._activeRenderers[i];
 				if(renderer is UIComponent)
 				{
 					UIComponent(renderer).drawNow();
@@ -853,14 +854,23 @@ package org.josht.foxhole.controls
 			this._startTouchTime = getTimer();
 			this._startMouseY = this.mouseY;
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
+			this._isMoving = false;
 		}
 		
 		private function stage_mouseMoveHandler(event:MouseEvent):void
 		{
-			this.mouseChildren = false;
-			if(!this._autoScrolling)
+			if(!this._isMoving &&
+				Math.abs(this.mouseY - this._startMouseY) >= MINIMUM_DISTANCE)
 			{
-				this.updateScrollFromMousePosition();
+				this._isMoving = true;
+			}
+			if(this._isMoving)
+			{
+				this.mouseChildren = false;
+				if(!this._autoScrolling)
+				{
+					this.updateScrollFromMousePosition();
+				}
 			}
 		}
 		
