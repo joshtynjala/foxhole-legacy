@@ -103,10 +103,18 @@ package org.josht.foxhole.controls
 				return;
 			}
 			this._dataProvider = value;
+			if(!this._dataProvider || this._dataProvider.length == 0)
+			{
+				this.selectedIndex = -1;
+			}
+			else if(this._selectedIndex < 0)
+			{
+				this.selectedIndex = 0
+			}
 			this.invalidate(InvalidationType.DATA);
 		}
 		
-		private var _selectedIndex:int = 0;
+		private var _selectedIndex:int = -1;
 
 		public function get selectedIndex():int
 		{
