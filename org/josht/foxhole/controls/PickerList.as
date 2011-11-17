@@ -222,7 +222,14 @@ package org.josht.foxhole.controls
 				this._list.labelField = this._labelField;
 				this._list.labelFunction = this._labelFunction;
 				
-				this._button.label = this.getItemLabel(this.selectedItem);
+				if(this._selectedIndex >= 0)
+				{
+					this._button.label = this.getItemLabel(this.selectedItem);
+				}
+				else
+				{
+					this._button.label = "";
+				}
 			}
 			
 			if(stateInvalid)
