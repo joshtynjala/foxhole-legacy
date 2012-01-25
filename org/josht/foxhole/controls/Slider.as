@@ -133,6 +133,23 @@ package org.josht.foxhole.controls
 			}
 			this._step = value;
 		}
+
+		private var _showThumb:Boolean = true;
+
+		public function get showThumb():Boolean
+		{
+			return this._showThumb;
+		}
+
+		public function set showThumb(value:Boolean):void
+		{
+			if(this._showThumb == value)
+			{
+				return;
+			}
+			this._showThumb = value;
+			this.invalidate(InvalidationType.STYLES);
+		}
 		
 		override protected function configUI():void
 		{
@@ -207,6 +224,7 @@ package org.josht.foxhole.controls
 			{
 				this.thumb.setStyle(styleName, thumbStyles[styleName]);
 			}
+			this.thumb.visible = this._showThumb;
 		}
 		
 		protected function refreshTrackSkin():void
