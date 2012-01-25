@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Josh Tynjala
+Copyright (c) 2012 Josh Tynjala
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -177,8 +177,7 @@ package org.josht.foxhole.controls
 			if(!this.labelField)
 			{
 				this.labelField = new TextField();
-				this.labelField.selectable = this.labelField.mouseEnabled =
-					this.labelField.mouseWheelEnabled = false;
+				this.labelField.selectable = this.labelField.mouseEnabled = this.labelField.mouseWheelEnabled = false;
 				this.addChild(this.labelField);
 			}
 		}
@@ -195,23 +194,24 @@ package org.josht.foxhole.controls
 				this.labelField.text = this._label;
 			}
 			
-			var contentPaddingChanged:Boolean = false;
-			const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 			if(stylesInvalid || stateInvalid)
 			{
 				this.refreshSkins();
 				this.refreshLabelStyles();
-				contentPaddingChanged = this.labelField.x != contentPadding;
 			}
 			
-			if(dataInvalid || sizeInvalid || contentPaddingChanged)
+			if(stylesInvalid || stateInvalid || dataInvalid || sizeInvalid)
 			{
+				const contentPadding:Number = this.getStyleValue("contentPadding") as Number;
 				const contentWidth:Number = Math.max(0, this._width - contentPadding * 2);
 				const contentHeight:Number = Math.max(0, this._height - contentPadding * 2);
+				//we can't rely on accessing labelField.height when setting y below (AIR on iOS)
+				//likewise, textHeight seems a bit unpredictable. Settled on getLineMetrics()
+				const labelHeight:Number = this.labelField.getLineMetrics(0).height + 4;
 				this.labelField.width = contentWidth;
-				this.labelField.height = this.labelField.textHeight + 4;
+				this.labelField.height = labelHeight;
 				this.labelField.x = contentPadding;
-				this.labelField.y = Math.round((this._height - this.labelField.height) / 2);
+				this.labelField.y = Math.round((this._height - labelHeight) / 2);
 			}
 			
 			if(stateInvalid)
@@ -327,9 +327,9 @@ package org.josht.foxhole.controls
 			{
 				textFormat = this.getStyleValue("disabledTextFormat") as TextFormat;
 			}
-			this.labelField.setTextFormat(textFormat);
-			this.labelField.defaultTextFormat = textFormat;
 			this.labelField.embedFonts = this.getStyleValue("embedFonts") as Boolean;
+			this.labelField.defaultTextFormat = textFormat;
+			this.labelField.setTextFormat(textFormat);
 		}
 		
 		protected function scaleSkin():void
