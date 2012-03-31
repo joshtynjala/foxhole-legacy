@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="foxhole-starling" default="build" basedir=".">
+	
+	<!-- build.local.properties and sdk.local.proprties are optional files that
+		can be used to override the default properties. -->
+	<property file="./sdk.local.properties"/>
+	<property file="./sdk.properties"/>
+	<property file="./build.local.properties"/>
+	<property file="./build.properties"/>
+
+	<target name="build">
+		<delete dir="${output.path}"/>
+		
+		<echo message="Building signals.swc"/>
+		<java jar="${compc}" dir="${signals.root}" fork="true" failonerror="true">
+			<arg line="+flexlib='${flexframework.root}'"/>
+			<arg line="--source-path+=."/>
+			<arg line="--include-sources+=."/>
+			<arg line="--external-library-path+='${flexframework.lib}'"/>
+			<arg line="--output '${dependency.output}/signals.swc'"/>
+		</java>
+		
+		<echo message="Building gtween.swc"/>
+		<java jar="${compc}" dir="${gtween.root}" fork="true" failonerror="true">
+			<arg line="+flexlib='${flexframework.root}'"/>
+			<arg line="--source-path+=."/>
+			<arg line="--include-sources+=."/>
+			<arg line="--external-library-path+='${flexframework.lib}'"/>
+			<arg line="--output '${dependency.output}/gtween.swc'"/>
+		</java>
+
+		<echo message="Building foxhole.swc"/>
+		<java jar="${compc}" dir="${basedir}" fork="true" failonerror="true">
+			<arg line="+flexlib='${flexframework.root}'"/>
+			<arg line="--source-path+='source'"/>
+			<arg line="--include-sources+='source'"/>
+			<arg line="--library-path+='${dependency.output}'"/>
+			<arg line="--external-library-path+='${flexframework.lib}'"/>
+			<arg line="--output '${swc.output}'"/>
+		</java>
+
+		<echo message="Generating Documentation"/>
+		<java jar="${asdoc}" dir="${basedir}" fork="true" failonerror="true">
+			<arg line="+flexlib='${flexframework.root}'"/>
+			<arg line="--source-path+='source'"/>
+			<arg line="--library-path+='${dependency.output}'"/>
+			<arg line="--doc-sources+='source'"/>
+			<arg line="--external-library-path+='${flexframework.lib}'"/>
+			<arg line="--main-title 'Foxhole API Documentation'"/>
+			<arg line="--window-title 'Foxhole API Documentation'"/>
+			<arg line="--output '${docs.output}'"/>
+		</java>
+
+		<delete dir="${dependency.output}"/>
+	</target>
+</project>
