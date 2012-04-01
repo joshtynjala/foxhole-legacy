@@ -34,7 +34,7 @@ package org.josht.foxhole.controls
 	import org.josht.utils.color.uintToBlue;
 	import org.josht.utils.color.uintToGreen;
 	import org.josht.utils.color.uintToRed;
-
+	
 	/**
 	 * Displays a single-line of text. Cannot be clipped.
 	 */
@@ -44,11 +44,12 @@ package org.josht.foxhole.controls
 		{
 		}
 		
-		private var _isLayoutInvalid:Boolean = false;
-		private var _isTextOrFontInvalid:Boolean = false;
+		private var _characters:Vector.<Bitmap> = new <Bitmap>[];
+		private var _cache:Vector.<Bitmap> = new <Bitmap>[];
 		
 		private var _lastFont:BitmapFont;
-		private var _lastColor:uint = uint.MAX_VALUE;
+		
+		private var _colorTransform:ColorTransform = new ColorTransform();
 		
 		/**
 		 * @private
@@ -68,19 +69,20 @@ package org.josht.foxhole.controls
 		 */
 		public function set textFormat(value:BitmapFontTextFormat):void
 		{
+			if(this._textFormat == value)
+			{
+				return;
+			}
 			this._textFormat = value;
 			if(this._textFormat)
 			{
-				if(this._textFormat.font != this._lastFont ||
-					this._textFormat.color != this._lastColor)
+				if(this._textFormat.font != this._lastFont)
 				{
-					this._isTextOrFontInvalid = true;
+					this.invalidate(INVALIDATION_FLAG_DATA);
 				}
 				this._lastFont = this._textFormat.font;
-				this._lastColor = this._textFormat.color;
 			}
-			this._isLayoutInvalid = true;
-			super.invalidate();
+			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
 		
 		/**
@@ -106,9 +108,7 @@ package org.josht.foxhole.controls
 				return;
 			}
 			this._text = value;
-			this._isTextOrFontInvalid = true;
-			this._isLayoutInvalid = true;
-			super.invalidate();
+			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 		
 		/**
@@ -134,20 +134,7 @@ package org.josht.foxhole.controls
 				return;
 			}
 			this._smoothing = value;
-			super.invalidate();
-		}
-		
-		private var _cache:Vector.<Bitmap> = new <Bitmap>[];
-		private var _characters:Vector.<Bitmap> = new <Bitmap>[];
-		
-		/**
-		 * @inheritDoc
-		 */
-		override public function invalidate(...rest:Array):void
-		{
-			this._isTextOrFontInvalid = true;
-			this._isLayoutInvalid = true;
-			super.invalidate.apply(this, rest);
+			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
 		
 		/**
@@ -164,25 +151,46 @@ package org.josht.foxhole.controls
 		 */
 		override protected function draw():void
 		{
-			this.rebuildCharacters();
-			const color:uint = this._textFormat ? this._textFormat.color : uint.MAX_VALUE;
-			var colorTransform:ColorTransform;
-			if(color != uint.MAX_VALUE)
-			{
-				const red:uint = uintToRed(color);
-				const green:uint = uintToGreen(color);
-				const blue:uint = uintToBlue(color);
-				colorTransform = new ColorTransform(0, 0, 0, 1, red, green, blue);
-			}
-			for each(var charDisplay:Bitmap in this._characters)
-			{
-				charDisplay.transform.colorTransform = colorTransform;
-				charDisplay.smoothing = this._smoothing;
-			}
-			this.layout();
+			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
+			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			
-			this._isLayoutInvalid = false;
-			this._isTextOrFontInvalid = false;
+			if(dataInvalid)
+			{
+				this.rebuildCharacters();
+			}
+			
+			if(dataInvalid || stylesInvalid)
+			{
+				const color:uint = this._textFormat ? this._textFormat.color : uint.MAX_VALUE;
+				if(color == uint.MAX_VALUE)
+				{
+					this._colorTransform.redMultiplier = 1;
+					this._colorTransform.greenMultiplier = 1;
+					this._colorTransform.blueMultiplier = 1;
+					this._colorTransform.redOffset = 0;
+					this._colorTransform.greenOffset = 0;
+					this._colorTransform.blueOffset = 0;
+				}
+				else
+				{
+					this._colorTransform.redMultiplier = 0;
+					this._colorTransform.greenMultiplier = 0;
+					this._colorTransform.blueMultiplier = 0;
+					this._colorTransform.redOffset = uintToRed(color);
+					this._colorTransform.greenOffset = uintToGreen(color);
+					this._colorTransform.blueOffset = uintToBlue(color);
+				}
+				for each(var charDisplay:Bitmap in this._characters)
+				{
+					charDisplay.transform.colorTransform = this._colorTransform;
+					charDisplay.smoothing = this._smoothing;
+				}
+			}
+			
+			if(dataInvalid || stylesInvalid)
+			{
+				this.layout();
+			}
 		}
 		
 		/**
@@ -190,11 +198,6 @@ package org.josht.foxhole.controls
 		 */
 		private function rebuildCharacters():void
 		{
-			if(!this._isTextOrFontInvalid)
-			{
-				return;
-			}
-			
 			if(!this._textFormat)
 			{
 				while(this._characters.length > 0)
@@ -242,7 +245,7 @@ package org.josht.foxhole.controls
 		 */
 		private function layout():void
 		{
-			if(!this._isLayoutInvalid || !this._textFormat)
+			if(!this._textFormat)
 			{
 				return;
 			}
