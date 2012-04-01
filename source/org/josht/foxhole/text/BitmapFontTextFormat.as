@@ -47,7 +47,9 @@ package org.josht.foxhole.text
 		public var font:BitmapFont;
 		
 		/**
-		 * The multiply color.
+		 * Sets the text to this color using a ColorTransform. Set to
+		 * <code>uint.MAX_VALUE</code> to use no color. On mobile, changing the
+		 * text color with this property has a performance impact. 
 		 */
 		public var color:uint;
 		
