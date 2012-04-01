@@ -168,7 +168,6 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
-			this.invalidate(INVALIDATION_FLAG_DATA);
 			if(this._viewPort)
 			{
 				if(this._viewPort is FoxholeControl)
@@ -444,6 +443,17 @@ package org.josht.foxhole.controls
 			return this._onScroll;
 		}
 		
+		private var _isScrollingStopped:Boolean = false;
+		
+		/**
+		 * If the user is dragging the scroll, calling stopScrolling() will
+		 * cause the scroller to ignore the drag.
+		 */
+		public function stopScrolling():void
+		{
+			this._isScrollingStopped = true;
+		}
+		
 		/**
 		 * @private
 		 */
@@ -456,7 +466,7 @@ package org.josht.foxhole.controls
 			}
 			/*else
 			{
-				this.addEventListener(TouchEvent.TOUCH_BEGIN, touchBeginHandler);
+			this.addEventListener(TouchEvent.TOUCH_BEGIN, touchBeginHandler);
 			}*/
 		}
 		
@@ -632,13 +642,13 @@ package org.josht.foxhole.controls
 			if(!isNaN(targetHorizontalScrollPosition))
 			{
 				this._horizontalAutoScrollTween = new GTween(this, 0.24,
-				{
-					horizontalScrollPosition: targetHorizontalScrollPosition
-				},
-				{
-					ease: Exponential.easeOut,
-					onComplete: horizontalAutoScrollTween_onComplete
-				});
+					{
+						horizontalScrollPosition: targetHorizontalScrollPosition
+					},
+					{
+						ease: Exponential.easeOut,
+						onComplete: horizontalAutoScrollTween_onComplete
+					});
 			}
 		}
 		
@@ -666,13 +676,13 @@ package org.josht.foxhole.controls
 			if(!isNaN(targetVerticalScrollPosition))
 			{
 				this._verticalAutoScrollTween = new GTween(this, 0.24,
-				{
-					verticalScrollPosition: targetVerticalScrollPosition
-				},
-				{
-					ease: Exponential.easeOut,
-					onComplete: verticalAutoScrollTween_onComplete
-				});
+					{
+						verticalScrollPosition: targetVerticalScrollPosition
+					},
+					{
+						ease: Exponential.easeOut,
+						onComplete: verticalAutoScrollTween_onComplete
+					});
 			}
 		}
 		
@@ -703,13 +713,13 @@ package org.josht.foxhole.controls
 				this._horizontalAutoScrollTween = null;
 			}
 			this._horizontalAutoScrollTween = new GTween(this, frameCount / frameRate,
-			{
-				horizontalScrollPosition: targetHorizontalScrollPosition
-			},
-			{
-				ease: Exponential.easeOut,
-				onComplete: horizontalAutoScrollTween_onComplete
-			});
+				{
+					horizontalScrollPosition: targetHorizontalScrollPosition
+				},
+				{
+					ease: Exponential.easeOut,
+					onComplete: horizontalAutoScrollTween_onComplete
+				});
 		}
 		
 		/**
@@ -739,13 +749,13 @@ package org.josht.foxhole.controls
 				this._verticalAutoScrollTween = null;
 			}
 			this._verticalAutoScrollTween = new GTween(this, frameCount / frameRate,
-			{
-				verticalScrollPosition: targetVerticalScrollPosition
-			},
-			{
-				ease: Exponential.easeOut,
-				onComplete: verticalAutoScrollTween_onComplete
-			});
+				{
+					verticalScrollPosition: targetVerticalScrollPosition
+				},
+				{
+					ease: Exponential.easeOut,
+					onComplete: verticalAutoScrollTween_onComplete
+				});
 		}
 		
 		/**
@@ -816,6 +826,7 @@ package org.josht.foxhole.controls
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
 			this._isDraggingHorizontally = false;
 			this._isDraggingVertically = false;
+			this._isScrollingStopped = false;
 			
 			if(event is TouchEvent)
 			{
@@ -833,6 +844,10 @@ package org.josht.foxhole.controls
 		private function stage_touchMoveHandler(event:Event):void
 		{
 			if(event is TouchEvent && TouchEvent(event).touchPointID != this._touchPointID)
+			{
+				return;
+			}
+			if(this._isScrollingStopped)
 			{
 				return;
 			}
@@ -862,6 +877,7 @@ package org.josht.foxhole.controls
 			{
 				this._isDraggingVertically = true;
 			}
+			
 			if(this._isDraggingHorizontally && !this._horizontalAutoScrollTween)
 			{
 				this.updateHorizontalScrollFromTouchPosition(stageX);
