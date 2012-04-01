@@ -433,6 +433,27 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
+		private var _hasElasticEdges:Boolean = true;
+		
+		/**
+		 * Determines if the scrolling can go beyond the edges of the viewport.
+		 */
+		public function get hasElasticEdges():Boolean
+		{
+			return this._hasElasticEdges;
+		}
+		
+		/**
+		 * @private
+		 */
+		public function set hasElasticEdges(value:Boolean):void
+		{
+			this._hasElasticEdges = value;
+		}
+		
+		/**
+		 * @private
+		 */
 		protected var _onScroll:Signal = new Signal(Scroller);
 		
 		/**
@@ -445,13 +466,11 @@ package org.josht.foxhole.controls
 		
 		private var _isScrollingStopped:Boolean = false;
 		
-		/**
-		 * If the user is dragging the scroll, calling stopScrolling() will
-		 * cause the scroller to ignore the drag.
-		 */
 		public function stopScrolling():void
 		{
 			this._isScrollingStopped = true;
+			this._velocityX = this._previousVelocityX = 0;
+			this._velocityY = this._previousVelocityY = 0;
 		}
 		
 		/**
@@ -587,13 +606,27 @@ package org.josht.foxhole.controls
 		{
 			const offset:Number = this._startTouchX - touchX;
 			var position:Number = this._startHorizontalScrollPosition + offset;
-			if(this._horizontalScrollPosition < 0)
+			if(position < 0)
 			{
-				position /= 2;
+				if(this._hasElasticEdges)
+				{
+					position /= 2;
+				}
+				else
+				{
+					position = 0;
+				}
 			}
 			else if(position > this._maxHorizontalScrollPosition)
 			{
-				position -= (position - this._maxHorizontalScrollPosition) / 2;
+				if(this._hasElasticEdges)
+				{
+					position -= (position - this._maxHorizontalScrollPosition) / 2;
+				}
+				else
+				{
+					position = this._maxHorizontalScrollPosition;
+				}
 			}
 			
 			this.horizontalScrollPosition = position;
@@ -606,13 +639,27 @@ package org.josht.foxhole.controls
 		{
 			const offset:Number = this._startTouchY - touchY;
 			var position:Number = this._startVerticalScrollPosition + offset;
-			if(this._verticalScrollPosition < 0)
+			if(position < 0)
 			{
-				position /= 2;
+				if(this._hasElasticEdges)
+				{
+					position /= 2;
+				}
+				else
+				{
+					position = 0;
+				}
 			}
 			else if(position > this._maxVerticalScrollPosition)
 			{
-				position -= (position - this._maxVerticalScrollPosition) / 2;
+				if(this._hasElasticEdges)
+				{
+					position -= (position - this._maxVerticalScrollPosition) / 2;
+				}
+				else
+				{
+					position = this._maxVerticalScrollPosition;
+				}
 			}
 			
 			this.verticalScrollPosition = position;
@@ -700,8 +747,17 @@ package org.josht.foxhole.controls
 				targetHorizontalScrollPosition -= pixelsPerFrame;
 				if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
 				{
-					pixelsPerFrame *= 0.5;
-					targetHorizontalScrollPosition += pixelsPerFrame;
+					if(this._hasElasticEdges)
+					{
+						pixelsPerFrame *= 0.5;
+						targetHorizontalScrollPosition += pixelsPerFrame;
+					}
+					else
+					{
+						targetHorizontalScrollPosition = clamp(targetHorizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
+						frameCount++;
+						break;
+					}
 				}
 				pixelsPerFrame *= FRICTION;
 				frameCount++;
@@ -736,8 +792,17 @@ package org.josht.foxhole.controls
 				targetVerticalScrollPosition -= pixelsPerFrame;
 				if(targetVerticalScrollPosition < 0 || targetVerticalScrollPosition > this._maxVerticalScrollPosition)
 				{
-					pixelsPerFrame *= 0.5;
-					targetVerticalScrollPosition += pixelsPerFrame;
+					if(this._hasElasticEdges)
+					{
+						pixelsPerFrame *= 0.5;
+						targetVerticalScrollPosition += pixelsPerFrame;
+					}
+					else
+					{
+						targetVerticalScrollPosition = clamp(targetVerticalScrollPosition, 0, this._maxVerticalScrollPosition);
+						frameCount++;
+						break;
+					}
 				}
 				pixelsPerFrame *= FRICTION;
 				frameCount++;
