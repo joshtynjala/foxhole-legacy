@@ -797,6 +797,7 @@ package org.josht.foxhole.controls
 					this.thumb[propertyName] = propertyValue;
 				}
 			}
+			this.thumb.isEnabled = this._isEnabled;
 			this.thumb.visible = this._showThumb;
 		}
 		
