@@ -294,6 +294,10 @@ package org.josht.foxhole.controls
 		 */
 		public function set isSelected(value:Boolean):void
 		{
+			if(this._isSelected == value)
+			{
+				return;
+			}
 			this._isSelected = value;
 			this.currentState = this.currentState;
 			this.invalidate(INVALIDATION_FLAG_STATE, INVALIDATION_FLAG_SELECTED);

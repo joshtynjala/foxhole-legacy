@@ -61,12 +61,12 @@ package org.josht.foxhole.controls
 		private var _isScrolling:Boolean = false;
 		
 		private var _owner:List;
-
+		
 		public function get owner():List
 		{
 			return this._owner;
 		}
-
+		
 		public function set owner(value:List):void
 		{
 			if(this._owner == value)
@@ -182,12 +182,12 @@ package org.josht.foxhole.controls
 		}
 		
 		private var _useVirtualLayout:Boolean = true;
-
+		
 		public function get useVirtualLayout():Boolean
 		{
 			return this._useVirtualLayout;
 		}
-
+		
 		public function set useVirtualLayout(value:Boolean):void
 		{
 			if(this._useVirtualLayout == value)
@@ -216,12 +216,12 @@ package org.josht.foxhole.controls
 		}
 		
 		private var _visibleHeight:Number = NaN;
-
+		
 		public function get visibleHeight():Number
 		{
 			return this._visibleHeight;
 		}
-
+		
 		public function set visibleHeight(value:Number):void
 		{
 			if(this._visibleHeight == value)
@@ -231,7 +231,7 @@ package org.josht.foxhole.controls
 			this._visibleHeight = value;
 			this.invalidate(INVALIDATION_FLAG_SCROLL);
 		}
-
+		
 		private var _isSelectable:Boolean = true;
 		
 		public function get isSelectable():Boolean
@@ -292,7 +292,7 @@ package org.josht.foxhole.controls
 			}
 			/*else
 			{
-				this.addEventListener(TouchEvent.TOUCH_BEGIN, touchBeginHandler);
+			this.addEventListener(TouchEvent.TOUCH_BEGIN, touchBeginHandler);
 			}*/
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
 		}
@@ -489,11 +489,11 @@ package org.josht.foxhole.controls
 				{
 					renderer = new this._itemRendererType();
 				}
-				const displayRenderer:DisplayObject = DisplayObject(renderer);
+				renderer.onChange.add(renderer_onChange);
 				
+				const displayRenderer:DisplayObject = DisplayObject(renderer);
 				//if(!Multitouch.supportsTouchEvents || Multitouch.inputMode != MultitouchInputMode.TOUCH_POINT)
 				{
-					displayRenderer.addEventListener(MouseEvent.CLICK, renderer_touchTapHandler);
 					displayRenderer.addEventListener(MouseEvent.MOUSE_DOWN, renderer_touchHandler);
 					displayRenderer.addEventListener(MouseEvent.MOUSE_MOVE, renderer_touchHandler);
 					displayRenderer.addEventListener(MouseEvent.MOUSE_UP, renderer_touchHandler);
@@ -503,13 +503,12 @@ package org.josht.foxhole.controls
 				}
 				/*else
 				{
-					displayRenderer.addEventListener(TouchEvent.TOUCH_TAP, renderer_touchTapHandler);
-					displayRenderer.addEventListener(TouchEvent.TOUCH_BEGIN, renderer_touchHandler);
-					displayRenderer.addEventListener(TouchEvent.TOUCH_MOVE, renderer_touchHandler);
-					displayRenderer.addEventListener(TouchEvent.TOUCH_END, renderer_touchHandler);
-					displayRenderer.addEventListener(TouchEvent.TOUCH_TAP, renderer_touchHandler);
-					displayRenderer.addEventListener(TouchEvent.TOUCH_ROLL_OVER, renderer_touchHandler);
-					displayRenderer.addEventListener(TouchEvent.TOUCH_ROLL_OUT, renderer_touchHandler);
+				displayRenderer.addEventListener(TouchEvent.TOUCH_BEGIN, renderer_touchHandler);
+				displayRenderer.addEventListener(TouchEvent.TOUCH_MOVE, renderer_touchHandler);
+				displayRenderer.addEventListener(TouchEvent.TOUCH_END, renderer_touchHandler);
+				displayRenderer.addEventListener(TouchEvent.TOUCH_TAP, renderer_touchHandler);
+				displayRenderer.addEventListener(TouchEvent.TOUCH_ROLL_OVER, renderer_touchHandler);
+				displayRenderer.addEventListener(TouchEvent.TOUCH_ROLL_OUT, renderer_touchHandler);
 				}*/
 				this.addChild(displayRenderer);
 			}
@@ -520,6 +519,10 @@ package org.josht.foxhole.controls
 			renderer.data = item;
 			renderer.index = index;
 			renderer.owner = this.owner;
+			if(renderer is FoxholeControl)
+			{
+				FoxholeControl(renderer).isEnabled = this._isEnabled;
+			}
 			
 			if(!isTemporary)
 			{
@@ -532,15 +535,14 @@ package org.josht.foxhole.controls
 		
 		private function destroyRenderer(renderer:IListItemRenderer):void
 		{
+			renderer.onChange.remove(renderer_onChange);
 			const displayRenderer:DisplayObject = DisplayObject(renderer);
-			displayRenderer.removeEventListener(TouchEvent.TOUCH_TAP, renderer_touchTapHandler);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH_BEGIN, renderer_touchHandler);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH_MOVE, renderer_touchHandler);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH_END, renderer_touchHandler);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH_TAP, renderer_touchHandler);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH_ROLL_OVER, renderer_touchHandler);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH_ROLL_OUT, renderer_touchHandler);
-			displayRenderer.removeEventListener(MouseEvent.CLICK, renderer_touchTapHandler);
 			displayRenderer.removeEventListener(MouseEvent.MOUSE_DOWN, renderer_touchHandler);
 			displayRenderer.removeEventListener(MouseEvent.MOUSE_MOVE, renderer_touchHandler);
 			displayRenderer.removeEventListener(MouseEvent.MOUSE_UP, renderer_touchHandler);
@@ -560,22 +562,15 @@ package org.josht.foxhole.controls
 			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 		
-		private function renderer_touchTapHandler(event:Event):void
+		private function renderer_onChange(renderer:IListItemRenderer):void
 		{
-			if(!this._isEnabled)
+			if(!this._isSelectable || this._isScrolling)
 			{
+				//ignore the change
+				renderer.isSelected = this._selectedIndex == renderer.index;
 				return;
 			}
-			if(event is TouchEvent && TouchEvent(event).touchPointID != this._touchPointID)
-			{
-				return;
-			}
-			
-			if(this._isSelectable && !this._isScrolling)
-			{
-				const renderer:IListItemRenderer = IListItemRenderer(event.currentTarget);
-				this.selectedIndex = renderer.index;
-			}
+			this.selectedIndex = renderer.index;
 		}
 		
 		/**
@@ -605,8 +600,8 @@ package org.josht.foxhole.controls
 			
 			/*if(event is TouchEvent)
 			{
-				this._touchPointID = TouchEvent(event).touchPointID;
-				this.stage.addEventListener(TouchEvent.TOUCH_TAP, stage_touchTapHandler);
+			this._touchPointID = TouchEvent(event).touchPointID;
+			this.stage.addEventListener(TouchEvent.TOUCH_TAP, stage_touchTapHandler);
 			}
 			else*/
 			{

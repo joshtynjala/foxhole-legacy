@@ -24,6 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 package org.josht.foxhole.controls
 {
+	import org.osflash.signals.ISignal;
+
 	/**
 	 * The default item renderer for List.
 	 * 
@@ -37,6 +39,7 @@ package org.josht.foxhole.controls
 		public function SimpleItemRenderer()
 		{
 			super();
+			this.isToggle = true;
 		}
 		
 		/**
