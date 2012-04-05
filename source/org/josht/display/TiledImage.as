@@ -43,6 +43,7 @@ package org.josht.display
 		{
 			super();
 			this.texture = texture;
+			this.mouseChildren = false;
 		}
 		
 		/**

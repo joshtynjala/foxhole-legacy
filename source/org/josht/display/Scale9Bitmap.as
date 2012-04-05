@@ -50,6 +50,7 @@ package org.josht.display
 			super();
 			this._texture = texture
 			this._scale9Grid = scale9Grid;
+			this.mouseChildren = false;
 		}
 		
 		private var _texture:BitmapData;

@@ -41,6 +41,7 @@ package org.josht.foxhole.controls
 	import org.josht.foxhole.core.IToggle;
 	import org.josht.foxhole.text.BitmapFontTextFormat;
 	import org.josht.text.BitmapFont;
+	import org.josht.utils.display.annihilateMouse;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
@@ -128,6 +129,7 @@ package org.josht.foxhole.controls
 				this.onSkinOriginalScaleX = this._onSkin.scaleX;
 				this.onSkinOriginalScaleY = this._onSkin.scaleY;
 				this._onSkin.scrollRect = new Rectangle();
+				annihilateMouse(this._onSkin, false);
 				this.addChildAt(this._onSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -170,6 +172,7 @@ package org.josht.foxhole.controls
 				this.offSkinOriginalScaleX = this._offSkin.scaleX;
 				this.offSkinOriginalScaleY = this._offSkin.scaleY;
 				this._offSkin.scrollRect = new Rectangle();
+				annihilateMouse(this._offSkin, false);
 				this.addChildAt(this._offSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -592,6 +595,7 @@ package org.josht.foxhole.controls
 			{
 				this.offLabelField = new Label();
 				this.offLabelField.scrollRect = new Rectangle();
+				this.offLabelField.mouseEnabled = this.offLabelField.mouseChildren = false;
 				this.addChild(this.offLabelField);
 			}
 			
@@ -599,6 +603,7 @@ package org.josht.foxhole.controls
 			{
 				this.onLabelField = new Label();
 				this.onLabelField.scrollRect = new Rectangle();
+				this.onLabelField.mouseEnabled = this.onLabelField.mouseChildren = false;
 				this.addChild(this.onLabelField);
 			}
 			

@@ -29,6 +29,7 @@ package org.josht.foxhole.controls
 	
 	import org.josht.foxhole.core.FoxholeControl;
 	import org.josht.foxhole.data.ListCollection;
+	import org.josht.utils.display.annihilateMouse;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
@@ -410,6 +411,7 @@ package org.josht.foxhole.controls
 			if(this._backgroundSkin && this._backgroundSkin.parent != this)
 			{
 				this._backgroundSkin.visible = false;
+				annihilateMouse(this._backgroundSkin, false);
 				this.addChildAt(this._backgroundSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -446,6 +448,7 @@ package org.josht.foxhole.controls
 			if(this._backgroundDisabledSkin && this._backgroundDisabledSkin.parent != this)
 			{
 				this._backgroundDisabledSkin.visible = false;
+				annihilateMouse(this._backgroundDisabledSkin, false);
 				this.addChildAt(this._backgroundSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);

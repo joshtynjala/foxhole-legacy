@@ -25,6 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 package org.josht.foxhole.controls
 {
 	import flash.display.DisplayObject;
+	import flash.display.DisplayObjectContainer;
+	import flash.display.InteractiveObject;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.events.TouchEvent;
@@ -37,6 +39,7 @@ package org.josht.foxhole.controls
 	import org.josht.foxhole.core.IToggle;
 	import org.josht.foxhole.text.BitmapFontTextFormat;
 	import org.josht.text.BitmapFont;
+	import org.josht.utils.display.annihilateMouse;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
@@ -504,6 +507,7 @@ package org.josht.foxhole.controls
 			if(this._defaultSkin && this._defaultSkin.parent != this)
 			{
 				this._defaultSkin.visible = false;
+				annihilateMouse(this._defaultSkin, false);
 				this.addChildAt(this._defaultSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -550,6 +554,7 @@ package org.josht.foxhole.controls
 			if(this._defaultSelectedSkin && this._defaultSelectedSkin.parent != this)
 			{
 				this._defaultSelectedSkin.visible = false;
+				annihilateMouse(this._defaultSelectedSkin, false);
 				this.addChildAt(this._defaultSelectedSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -591,6 +596,7 @@ package org.josht.foxhole.controls
 			if(this._upSkin && this._upSkin.parent != this)
 			{
 				this._upSkin.visible = false;
+				annihilateMouse(this._upSkin, false);
 				this.addChildAt(this._upSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -632,6 +638,7 @@ package org.josht.foxhole.controls
 			if(this._downSkin && this._downSkin.parent != this)
 			{
 				this._downSkin.visible = false;
+				annihilateMouse(this._downSkin, false);
 				this.addChildAt(this._downSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -673,6 +680,7 @@ package org.josht.foxhole.controls
 			if(this._disabledSkin && this._disabledSkin.parent != this)
 			{
 				this._disabledSkin.visible = false;
+				annihilateMouse(this._disabledSkin, false);
 				this.addChildAt(this._disabledSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -717,6 +725,7 @@ package org.josht.foxhole.controls
 			if(this._selectedUpSkin && this._selectedUpSkin.parent != this)
 			{
 				this._selectedUpSkin.visible = false;
+				annihilateMouse(this._selectedUpSkin, false);
 				this.addChildAt(this._selectedUpSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -761,6 +770,7 @@ package org.josht.foxhole.controls
 			if(this._selectedDownSkin && this._selectedDownSkin.parent != this)
 			{
 				this._selectedDownSkin.visible = false;
+				annihilateMouse(this._selectedDownSkin, false);
 				this.addChildAt(this._selectedDownSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -999,6 +1009,7 @@ package org.josht.foxhole.controls
 			if(this._defaultIcon && this._defaultIcon.parent != this)
 			{
 				this._defaultIcon.visible = false;
+				annihilateMouse(this._defaultIcon, false);
 				this.addChild(this._defaultIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1045,6 +1056,7 @@ package org.josht.foxhole.controls
 			if(this._defaultSelectedIcon && this._defaultSelectedIcon.parent != this)
 			{
 				this._defaultSelectedIcon.visible = false;
+				annihilateMouse(this._defaultSelectedIcon, false);
 				this.addChild(this._defaultSelectedIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1086,6 +1098,7 @@ package org.josht.foxhole.controls
 			if(this._upIcon && this._upIcon.parent != this)
 			{
 				this._upIcon.visible = false;
+				annihilateMouse(this._upIcon, false);
 				this.addChild(this._upIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1127,6 +1140,7 @@ package org.josht.foxhole.controls
 			if(this._downIcon && this._downIcon.parent != this)
 			{
 				this._downIcon.visible = false;
+				annihilateMouse(this._downIcon, false);
 				this.addChild(this._downIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1168,6 +1182,7 @@ package org.josht.foxhole.controls
 			if(this._disabledIcon && this._disabledIcon.parent != this)
 			{
 				this._disabledIcon.visible = false;
+				annihilateMouse(this._disabledIcon, false);
 				this.addChild(this._disabledIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1212,6 +1227,7 @@ package org.josht.foxhole.controls
 			if(this._selectedUpIcon && this._selectedUpIcon.parent != this)
 			{
 				this._selectedUpIcon.visible = false;
+				annihilateMouse(this._selectedUpIcon, false);
 				this.addChild(this._selectedUpIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1256,6 +1272,7 @@ package org.josht.foxhole.controls
 			if(this._selectedDownIcon && this._selectedDownIcon.parent != this)
 			{
 				this._selectedDownIcon.visible = false;
+				annihilateMouse(this._selectedDownIcon, false);
 				this.addChild(this._selectedDownIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1321,6 +1338,7 @@ package org.josht.foxhole.controls
 			if(!this.labelField)
 			{
 				this.labelField = new Label();
+				this.labelField.mouseEnabled = this.labelField.mouseChildren = false;
 				this.addChild(this.labelField);
 			}
 			
