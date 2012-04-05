@@ -577,8 +577,8 @@ package org.josht.foxhole.controls
 		private function removedFromStageHandler(event:Event):void
 		{
 			this._touchPointID = -1;
-			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_touchTapHandler);
-			this.stage.removeEventListener(TouchEvent.TOUCH_END, stage_touchTapHandler);
+			this.stage.removeEventListener(MouseEvent.CLICK, stage_touchTapHandler);
+			this.stage.removeEventListener(TouchEvent.TOUCH_TAP, stage_touchTapHandler);
 		}
 		
 		/**
@@ -612,8 +612,8 @@ package org.josht.foxhole.controls
 			}
 			
 			this._touchPointID = -1;
-			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_touchTapHandler);
-			this.stage.removeEventListener(TouchEvent.TOUCH_END, stage_touchTapHandler);
+			this.stage.removeEventListener(MouseEvent.CLICK, stage_touchTapHandler);
+			this.stage.removeEventListener(TouchEvent.TOUCH_TAP, stage_touchTapHandler);
 		}
 		
 		/**
