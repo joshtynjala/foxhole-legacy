@@ -108,7 +108,7 @@ package org.josht.display
 			if (region == null) return null;
 			
 			const frame:Rectangle = mTextureFrames[name];
-			var texture:BitmapData = new BitmapData(frame ? frame.width : region.width, frame ? frame.height : region.width, true, 0x00000000);
+			var texture:BitmapData = new BitmapData(frame ? frame.width : region.width, frame ? frame.height : region.height, true, 0x00000000);
 			texture.copyPixels(this.mAtlasTexture, region, new Point(frame ? -frame.x : 0, frame ? -frame.y : 0));
 			return texture;
 		}
