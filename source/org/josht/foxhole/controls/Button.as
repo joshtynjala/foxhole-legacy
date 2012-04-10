@@ -157,7 +157,7 @@ package org.josht.foxhole.controls
 		 */
 		protected var currentIcon:DisplayObject;
 		
-		private var _touchPointID:int = -1;
+		protected var _touchPointID:int = -1;
 		
 		/**
 		 * @inheritDoc
@@ -196,7 +196,7 @@ package org.josht.foxhole.controls
 		 */
 		protected function get currentState():String
 		{
-			return _currentState;
+			return this._currentState;
 		}
 		
 		/**
@@ -1893,6 +1893,7 @@ package org.josht.foxhole.controls
 			}
 			else
 			{
+				this._touchPointID = 0;
 				this.stage.addEventListener(MouseEvent.MOUSE_MOVE, stage_touchMoveHandler);
 				this.stage.addEventListener(MouseEvent.MOUSE_UP, stage_touchEndHandler);
 			}
@@ -1900,7 +1901,7 @@ package org.josht.foxhole.controls
 		
 		private function stage_touchMoveHandler(event:Event):void
 		{
-			if(event is TouchEvent && TouchEvent(event).touchPointID != this._touchPointID)
+			if((event is MouseEvent && this._touchPointID != 0) || (event is TouchEvent && TouchEvent(event).touchPointID != this._touchPointID))
 			{
 				return;
 			}
@@ -1918,7 +1919,7 @@ package org.josht.foxhole.controls
 		
 		private function stage_touchEndHandler(event:Event):void
 		{
-			if(event is TouchEvent && TouchEvent(event).touchPointID != this._touchPointID)
+			if((event is MouseEvent && this._touchPointID != 0) || (event is TouchEvent && TouchEvent(event).touchPointID != this._touchPointID))
 			{
 				return;
 			}
