@@ -123,7 +123,7 @@ package org.josht.foxhole.controls
 				return;
 			}
 			this._selectedIndex = value;
-			this.invalidate(INVALIDATION_FLAG_DATA);
+			this.invalidate(INVALIDATION_FLAG_SELECTED);
 			this._onChange.dispatch(this);
 		}
 		
@@ -226,6 +226,34 @@ package org.josht.foxhole.controls
 			}
 			this._popUpPadding = value;
 			this.invalidate(INVALIDATION_FLAG_STAGE_SIZE);
+		}
+		
+		/**
+		 * @private
+		 */
+		private var _typicalItem:Object = null;
+		
+		/**
+		 * Used to auto-size the list. If the list's width or height is NaN, the
+		 * list will try to automatically pick an ideal size. This item is
+		 * used in that process to create a sample item renderer.
+		 */
+		public function get typicalItem():Object
+		{
+			return this._typicalItem;
+		}
+		
+		/**
+		 * @private
+		 */
+		public function set typicalItem(value:Object):void
+		{
+			if(this._typicalItem == value)
+			{
+				return;
+			}
+			this._typicalItem = value;
+			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
 		
 		/**
@@ -405,6 +433,7 @@ package org.josht.foxhole.controls
 			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			const stateInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STATE);
+			const selectionInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SELECTED);
 			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
 			const stageSizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STAGE_SIZE);
 			
@@ -417,19 +446,9 @@ package org.josht.foxhole.controls
 			if(dataInvalid)
 			{
 				this._list.dataProvider = this._dataProvider;
-				this._list.selectedIndex = this.selectedIndex;
 				this._list.labelField = this._labelField;
 				this._list.labelFunction = this._labelFunction;
 				this._hasBeenScrolled = false;
-				
-				if(this._selectedIndex >= 0)
-				{
-					this._button.label = this.itemToLabel(this.selectedItem);
-				}
-				else
-				{
-					this._button.label = "";
-				}
 			}
 			
 			if(stateInvalid)
@@ -437,17 +456,38 @@ package org.josht.foxhole.controls
 				this._button.isEnabled = this.isEnabled;
 			}
 			
-			this._button.validate();
-			
-			if(isNaN(this._width))
+			var newWidth:Number = this._width;
+			var newHeight:Number = this._height;
+			var usedTypicalItem:Boolean = false;
+			if(isNaN(newWidth) || isNaN(newHeight))
 			{
-				this._width = this._button.width;
-				sizeInvalid = true;
+				if(this._typicalItem)
+				{
+					usedTypicalItem = true;
+					this._button.label = this.itemToLabel(this._typicalItem);
+				}
+				else
+				{
+					this.refreshButtonLabel();
+				}
+				this._button.validate();
+				if(isNaN(newWidth))
+				{
+					newWidth = this._button.width;
+					sizeInvalid = true;
+				}
+				if(isNaN(this._height))
+				{
+					newHeight = this._button.height;
+					sizeInvalid = true;
+				}
+				this.setSizeInternal(newWidth, newHeight, false);
 			}
-			if(isNaN(this._height))
+			
+			if(selectionInvalid || usedTypicalItem)
 			{
-				this._height = this._button.height;
-				sizeInvalid = true;
+				this.refreshButtonLabel();
+				this._list.selectedIndex = this._selectedIndex;
 			}
 			
 			if(sizeInvalid)
@@ -462,7 +502,21 @@ package org.josht.foxhole.controls
 				this.resizeAndPositionList();
 			}
 			this._list.validate();
-			this._selectedIndex = this._list.selectedIndex;
+		}
+		
+		/**
+		 * @private
+		 */
+		protected function refreshButtonLabel():void
+		{
+			if(this._selectedIndex >= 0)
+			{
+				this._button.label = this.itemToLabel(this.selectedItem);
+			}
+			else
+			{
+				this._button.label = "";
+			}
 		}
 		
 		/**
@@ -562,7 +616,8 @@ package org.josht.foxhole.controls
 		protected function list_onItemTouch(list:List, item:Object, index:int, event:Event):void
 		{
 			const displayRenderer:DisplayObject = DisplayObject(event.currentTarget);
-			if(this._hasBeenScrolled || (event is TouchEvent && this._touchPointID != TouchEvent(event).touchPointID) ||
+			if(this._hasBeenScrolled || (event is MouseEvent && this._touchPointID != 0) ||
+				(event is TouchEvent && this._touchPointID != TouchEvent(event).touchPointID) ||
 				(event.type != TouchEvent.TOUCH_TAP && event.type != MouseEvent.CLICK))
 			{
 				return;

@@ -232,6 +232,8 @@ package org.josht.foxhole.controls
 			this.invalidate(INVALIDATION_FLAG_SCROLL);
 		}
 		
+		private var _ignoreSelectionChanges:Boolean = false;
+		
 		private var _isSelectable:Boolean = true;
 		
 		public function get isSelectable():Boolean
@@ -301,12 +303,14 @@ package org.josht.foxhole.controls
 		{
 			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
 			const scrollInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SCROLL);
-			const sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
+			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
 			const selectionInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SELECTED);
 			const itemRendererInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_ITEM_RENDERER);
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			
-			if(isNaN(this._width) || isNaN(this._rowHeight))
+			var newWidth:Number = this._width;
+			var newHeight:Number = this._height;
+			if(isNaN(newWidth) || isNaN(this._rowHeight))
 			{
 				var typicalItem:Object = this._typicalItem;
 				if(!typicalItem && this._dataProvider && this._dataProvider.length > 0)
@@ -321,9 +325,10 @@ package org.josht.foxhole.controls
 					{
 						FoxholeControl(typicalRenderer).validate();
 					}
-					if(isNaN(this._width))
+					if(isNaN(newWidth))
 					{
-						this.width = DisplayObject(typicalRenderer).width;
+						newWidth = DisplayObject(typicalRenderer).width;
+						sizeInvalid = true;
 					}
 					if(isNaN(this._rowHeight))
 					{
@@ -333,7 +338,12 @@ package org.josht.foxhole.controls
 				}
 			}
 			
-			this.height = this._dataProvider ? (this._rowHeight * this._dataProvider.length) : 0;
+			if(dataInvalid || isNaN(newHeight))
+			{
+				newHeight = this._dataProvider ? (this._rowHeight * this._dataProvider.length) : 0;
+			}
+			this.setSizeInternal(newWidth, newHeight, false);
+			
 			this.refreshRenderers(itemRendererInvalid);
 			this.drawRenderers();
 			this.refreshItemRendererStyles();
@@ -379,10 +389,12 @@ package org.josht.foxhole.controls
 		
 		protected function refreshSelection():void
 		{
+			this._ignoreSelectionChanges = true;
 			for each(var renderer:IListItemRenderer in this._activeRenderers)
 			{
 				renderer.isSelected = renderer.index == this._selectedIndex;
 			}
+			this._ignoreSelectionChanges = false;
 		}
 		
 		protected function drawRenderers():void
@@ -564,9 +576,13 @@ package org.josht.foxhole.controls
 		
 		private function renderer_onChange(renderer:IListItemRenderer):void
 		{
-			if(!this._isSelectable || this._isScrolling)
+			if(this._ignoreSelectionChanges)
 			{
-				//ignore the change
+				return;
+			}
+			if(!this._isSelectable || this._isScrolling || this._selectedIndex == renderer.index)
+			{
+				//reset to the old value
 				renderer.isSelected = this._selectedIndex == renderer.index;
 				return;
 			}

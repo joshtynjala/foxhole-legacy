@@ -363,10 +363,21 @@ package org.josht.foxhole.core
 			return this._invalidationFlags[flag];
 		}
 		
+		
+		
 		/**
 		 * Sets both the width and the height of the control.
 		 */
 		public function setSize(width:Number, height:Number):void
+		{
+			this.setSizeInternal(width, height, true);
+		}
+		
+		/**
+		 * Sets the width and height of the control, with the option of
+		 * invalidating or not.
+		 */
+		protected function setSizeInternal(width:Number, height:Number, canInvalidate:Boolean):void
 		{
 			var resized:Boolean = false;
 			if(this._width != width)
@@ -381,7 +392,10 @@ package org.josht.foxhole.core
 			}
 			if(resized)
 			{
-				this.invalidate(INVALIDATION_FLAG_SIZE);
+				if(canInvalidate)
+				{
+					this.invalidate(INVALIDATION_FLAG_SIZE);
+				}
 				this._onResize.dispatch(this);
 			}
 		}
