@@ -1338,6 +1338,7 @@ package org.josht.foxhole.controls
 			if(!this.labelField)
 			{
 				this.labelField = new Label();
+				this.labelField.name = "foxhole-button-label";
 				this.labelField.mouseEnabled = this.labelField.mouseChildren = false;
 				this.addChild(this.labelField);
 			}
