@@ -594,6 +594,7 @@ package org.josht.foxhole.controls
 			if(!this.offLabelField)
 			{
 				this.offLabelField = new Label();
+				this.offLabelField.name = "foxhole-toggle-switch-off-label";
 				this.offLabelField.scrollRect = new Rectangle();
 				this.offLabelField.mouseEnabled = this.offLabelField.mouseChildren = false;
 				this.addChild(this.offLabelField);
@@ -602,6 +603,7 @@ package org.josht.foxhole.controls
 			if(!this.onLabelField)
 			{
 				this.onLabelField = new Label();
+				this.onLabelField.name = "foxhole-toggle-switch-on-label";
 				this.onLabelField.scrollRect = new Rectangle();
 				this.onLabelField.mouseEnabled = this.onLabelField.mouseChildren = false;
 				this.addChild(this.onLabelField);
@@ -610,6 +612,7 @@ package org.josht.foxhole.controls
 			if(!this.thumb)
 			{
 				this.thumb = new Button();
+				this.thumb.name = "foxhole-toggle-switch-thumb";
 				this.thumb.label = "";
 				this.thumb.keepDownStateOnRollOut = true;
 				//if(!Multitouch.supportsTouchEvents || Multitouch.inputMode != MultitouchInputMode.TOUCH_POINT)

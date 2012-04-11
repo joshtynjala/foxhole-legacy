@@ -402,6 +402,7 @@ package org.josht.foxhole.controls
 			if(!this._button)
 			{
 				this._button = new Button();
+				this._button.name = "foxhole-pickerlist-button";
 				this._button.onRelease.add(button_onRelease);
 				this.addChild(this._button);
 			}
@@ -409,6 +410,7 @@ package org.josht.foxhole.controls
 			if(!this._list)
 			{
 				this._list = new List();
+				this._list.name = "foxhole-pickerlist-list";
 				this._list.onScroll.add(list_onScroll);
 				this._list.onChange.add(list_onChange);
 				this._list.onItemTouch.add(list_onItemTouch);

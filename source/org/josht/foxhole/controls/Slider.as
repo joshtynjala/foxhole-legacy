@@ -360,6 +360,7 @@ package org.josht.foxhole.controls
 			if(!this.track)
 			{
 				this.track = new Button();
+				this.track.name = "foxhole-slider-track";
 				this.track.label = "";
 				//if(!Multitouch.supportsTouchEvents || Multitouch.inputMode != MultitouchInputMode.TOUCH_POINT)
 				{
@@ -375,6 +376,7 @@ package org.josht.foxhole.controls
 			if(!this.thumb)
 			{
 				this.thumb = new Button();
+				this.thumb.name = "foxhole-slider-thumb";
 				this.thumb.label = "";
 				this.thumb.keepDownStateOnRollOut = true;
 				//if(!Multitouch.supportsTouchEvents || Multitouch.inputMode != MultitouchInputMode.TOUCH_POINT)
