@@ -319,6 +319,10 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
+			if(!value)
+			{
+				value = {};
+			}
 			this._listProperties = value;
 			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
@@ -344,6 +348,10 @@ package org.josht.foxhole.controls
 			if(this._itemRendererProperties == value)
 			{
 				return;
+			}
+			if(!value)
+			{
+				value = {};
 			}
 			this._itemRendererProperties = value;
 			this.invalidate(INVALIDATION_FLAG_STYLES);

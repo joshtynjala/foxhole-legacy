@@ -563,6 +563,10 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
+			if(!value)
+			{
+				value = {};
+			}
 			this._thumbProperties = value;
 			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
