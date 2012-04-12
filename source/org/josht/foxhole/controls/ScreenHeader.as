@@ -31,8 +31,9 @@ package org.josht.foxhole.controls
 	
 	/**
 	 * A header that displays a title along with a horizontal regions for
-	 * additional UI controls on the sides. The Left side is for navigation and
-	 * the right for additional actions.
+	 * additional UI controls on the sides. The Left side is typically for
+	 * navigation (to display a back button, for example) and the right for
+	 * additional actions.
 	 */
 	public class ScreenHeader extends FoxholeControl
 	{
