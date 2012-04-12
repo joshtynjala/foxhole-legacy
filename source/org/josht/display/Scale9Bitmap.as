@@ -34,7 +34,10 @@ package org.josht.display
 	import org.josht.foxhole.core.FoxholeControl;
 	
 	/**
-	 * Takes a texture and automatically creates a scale-9 grid of subtextures.
+	 * Scales an image with nine regions to maintain the aspect ratio of the
+	 * corners regions. The top and bottom regions stretch horizontally, and the
+	 * left and right regions scale vertically. The center region stretches in
+	 * both directions to fill the remaining space.
 	 */
 	public class Scale9Bitmap extends FoxholeControl
 	{
@@ -274,22 +277,27 @@ package org.josht.display
 			
 			if(this._topRight)
 			{
+				HELPER_MATRIX.tx = scaledLeftWidth + scaledCenterWidth;
 				this.graphics.beginBitmapFill(this._topRight, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(scaledLeftWidth + scaledCenterWidth, 0, scaledRightWidth, scaledTopHeight);
+				this.graphics.drawRect(HELPER_MATRIX.tx, 0, scaledRightWidth, scaledTopHeight);
 				this.graphics.endFill();
 			}
 			
 			if(this._bottomLeft)
 			{
+				HELPER_MATRIX.tx = 0;
+				HELPER_MATRIX.ty = scaledTopHeight + scaledMiddleHeight;
 				this.graphics.beginBitmapFill(this._bottomLeft, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(0, scaledTopHeight + scaledMiddleHeight, scaledLeftWidth, scaledBottomHeight);
+				this.graphics.drawRect(0, HELPER_MATRIX.ty, scaledLeftWidth, scaledBottomHeight);
 				this.graphics.endFill();
 			}
 			
 			if(this._bottomRight)
 			{
+				HELPER_MATRIX.tx = scaledLeftWidth + scaledCenterWidth;
+				HELPER_MATRIX.ty = scaledTopHeight + scaledMiddleHeight;
 				this.graphics.beginBitmapFill(this._bottomRight, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(scaledLeftWidth + scaledCenterWidth, scaledTopHeight + scaledMiddleHeight, scaledRightWidth, scaledBottomHeight);
+				this.graphics.drawRect(HELPER_MATRIX.tx, HELPER_MATRIX.ty, scaledRightWidth, scaledBottomHeight);
 				this.graphics.endFill();
 			}
 			
@@ -298,15 +306,18 @@ package org.josht.display
 			
 			if(this._topCenter)
 			{
+				HELPER_MATRIX.tx = scaledLeftWidth;
 				this.graphics.beginBitmapFill(this._topCenter, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(scaledLeftWidth, 0, scaledCenterWidth, scaledTopHeight);
+				this.graphics.drawRect(HELPER_MATRIX.tx, 0, scaledCenterWidth, scaledTopHeight);
 				this.graphics.endFill();
 			}
 			
 			if(this._bottomCenter)
 			{
+				HELPER_MATRIX.tx = scaledLeftWidth;
+				HELPER_MATRIX.ty = scaledTopHeight + scaledMiddleHeight
 				this.graphics.beginBitmapFill(this._bottomCenter, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(scaledLeftWidth, scaledTopHeight + scaledMiddleHeight, scaledCenterWidth, scaledBottomHeight);
+				this.graphics.drawRect(HELPER_MATRIX.tx, HELPER_MATRIX.ty, scaledCenterWidth, scaledBottomHeight);
 				this.graphics.endFill();
 			}
 			
@@ -315,25 +326,29 @@ package org.josht.display
 			
 			if(this._middleLeft)
 			{
+				HELPER_MATRIX.ty = scaledTopHeight;
 				this.graphics.beginBitmapFill(this._middleLeft, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(0, scaledTopHeight, scaledLeftWidth, scaledMiddleHeight);
+				this.graphics.drawRect(0, HELPER_MATRIX.ty, scaledLeftWidth, scaledMiddleHeight);
 				this.graphics.endFill();
 			}
 			
 			if(this._middleRight)
 			{
+				HELPER_MATRIX.tx = scaledLeftWidth + scaledCenterWidth;
+				HELPER_MATRIX.ty = scaledTopHeight;
 				this.graphics.beginBitmapFill(this._middleRight, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(scaledLeftWidth + scaledCenterWidth, scaledTopHeight, scaledRightWidth, scaledMiddleHeight);
+				this.graphics.drawRect(HELPER_MATRIX.tx, HELPER_MATRIX.ty, scaledRightWidth, scaledMiddleHeight);
 				this.graphics.endFill();
 			}
 			
-			HELPER_MATRIX.identity();
-			HELPER_MATRIX.scale(this._textureScale * centerScale, this._textureScale * middleScale);
-			
 			if(this._middleCenter)
 			{
+				HELPER_MATRIX.identity();
+				HELPER_MATRIX.scale(this._textureScale * centerScale, this._textureScale * middleScale);
+				HELPER_MATRIX.tx = scaledLeftWidth;
+				HELPER_MATRIX.ty = scaledTopHeight;
 				this.graphics.beginBitmapFill(this._middleCenter, HELPER_MATRIX, false, this._smoothing);
-				this.graphics.drawRect(scaledLeftWidth, scaledTopHeight, scaledCenterWidth, scaledMiddleHeight);
+				this.graphics.drawRect(HELPER_MATRIX.tx, HELPER_MATRIX.ty, scaledCenterWidth, scaledMiddleHeight);
 				this.graphics.endFill();
 			}
 		}
