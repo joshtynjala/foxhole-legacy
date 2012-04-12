@@ -28,8 +28,14 @@ package org.josht.foxhole.controls
 	import flash.events.Event;
 	import flash.utils.getTimer;
 	
+	/**
+	 * Displays the frames per second.
+	 */
 	public class FPSDisplay extends Label
 	{
+		/**
+		 * Constructor.
+		 */
 		public function FPSDisplay()
 		{
 			super();
@@ -43,8 +49,15 @@ package org.josht.foxhole.controls
 		private var _lastUpdate:int;
 		private var _nativeStage:Stage;
 		
+		/**
+		 * If true, will display both the actual frame rate, and the target
+		 * frame rate of the stage.
+		 */
 		public var showTargetFPS:Boolean = false
 		
+		/**
+		 * @private
+		 */
 		private function enterFrameHandler(event:Event):void
 		{
 			this._frameCount++;
@@ -59,6 +72,9 @@ package org.josht.foxhole.controls
 			}
 		}
 		
+		/**
+		 * @private
+		 */
 		private function addedToStageHandler(event:Event):void
 		{
 			this._lastUpdate = getTimer();
@@ -67,6 +83,9 @@ package org.josht.foxhole.controls
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
 		}
 		
+		/**
+		 * @private
+		 */
 		private function removedFromStageHandler(event:Event):void
 		{
 			this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
