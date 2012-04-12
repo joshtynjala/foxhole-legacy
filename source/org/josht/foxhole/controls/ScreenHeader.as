@@ -38,6 +38,35 @@ package org.josht.foxhole.controls
 	public class ScreenHeader extends FoxholeControl
 	{
 		/**
+		 * @private
+		 */
+		public static const INVALIDATION_FLAG_LEFT_CONTENT:String = "leftContent";
+		
+		/**
+		 * @private
+		 */
+		public static const INVALIDATION_FLAG_RIGHT_CONTENT:String = "rightContent";
+		
+		/**
+		 * The title will appear in the center of the header.
+		 */
+		public static const TITLE_ALIGN_CENTER:String = "center";
+		
+		/**
+		 * The title will appear on the left of the header, if there is no other
+		 * content on that side. If there is content, the title will appear in
+		 * the center.
+		 */
+		public static const TITLE_ALIGN_PREFER_LEFT:String = "preferLeft";
+		
+		/**
+		 * The title will appear on the right of the header, if there is no
+		 * other content on that side. If there is content, the title will
+		 * appear in the center.
+		 */
+		public static const TITLE_ALIGN_PREFER_RIGHT:String = "preferRight";
+		
+		/**
 		 * Constructor.
 		 */
 		public function ScreenHeader()
@@ -78,81 +107,67 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
-		private var _navigationItems:Vector.<DisplayObject>;
+		private var _leftItems:Vector.<DisplayObject>;
 		
 		/**
 		 * The UI controls that appear in the left region of the header.
 		 */
-		public function get navigationItems():Vector.<DisplayObject>
+		public function get leftItems():Vector.<DisplayObject>
 		{
-			return this._navigationItems.concat();
+			return this._leftItems.concat();
 		}
 		
 		/**
 		 * @private
 		 */
-		public function set navigationItems(value:Vector.<DisplayObject>):void
+		public function set leftItems(value:Vector.<DisplayObject>):void
 		{
-			if(this._navigationItems == value)
+			if(this._leftItems == value)
 			{
 				return;
 			}
-			if(this._navigationItems)
+			if(this._leftItems)
 			{
-				for each(var item:DisplayObject in this._navigationItems)
+				for each(var item:DisplayObject in this._leftItems)
 				{
 					this.removeChild(item);
 				}
 			}
-			this._navigationItems = value;
-			if(this._navigationItems)
-			{
-				for each(item in this._navigationItems)
-				{
-					this.addChild(item);
-				}
-			}
-			this.invalidate(INVALIDATION_FLAG_DATA);
+			this._leftItems = value;
+			this.invalidate(INVALIDATION_FLAG_LEFT_CONTENT);
 		}
 		
 		/**
 		 * @private
 		 */
-		private var _actionItems:Vector.<DisplayObject>;
+		private var _rightItems:Vector.<DisplayObject>;
 		
 		/**
 		 * The UI controls that appear in the right region of the header.
 		 */
-		public function get actionItems():Vector.<DisplayObject>
+		public function get rightItems():Vector.<DisplayObject>
 		{
-			return this._actionItems.concat();
+			return this._rightItems.concat();
 		}
 		
 		/**
 		 * @private
 		 */
-		public function set actionItems(value:Vector.<DisplayObject>):void
+		public function set rightItems(value:Vector.<DisplayObject>):void
 		{
-			if(this._actionItems == value)
+			if(this._rightItems == value)
 			{
 				return;
 			}
-			if(this._actionItems)
+			if(this._rightItems)
 			{
-				for each(var item:DisplayObject in this._actionItems)
+				for each(var item:DisplayObject in this._rightItems)
 				{
 					this.removeChild(item);
 				}
 			}
-			this._actionItems = value;
-			if(this._actionItems)
-			{
-				for each(item in this._actionItems)
-				{
-					this.addChild(item);
-				}
-			}
-			this.invalidate(INVALIDATION_FLAG_DATA);
+			this._rightItems = value;
+			this.invalidate(INVALIDATION_FLAG_RIGHT_CONTENT);
 		}
 		
 		/**
@@ -308,6 +323,34 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
+		private var _titleAlign:String = TITLE_ALIGN_CENTER;
+		
+		/**
+		 * The preferred position of the title. If leftItems and/or rightItems
+		 * is defined, the title may be forced to the center even if the
+		 * preferred position is on the left or right.
+		 */
+		public function get titleAlign():String
+		{
+			return this._titleAlign;
+		}
+		
+		/**
+		 * @private
+		 */
+		public function set titleAlign(value:String):void
+		{
+			if(this._titleAlign == value)
+			{
+				return;
+			}
+			this._titleAlign = value;
+			this.invalidate(INVALIDATION_FLAG_STYLES);
+		}
+		
+		/**
+		 * @private
+		 */
 		override protected function initialize():void
 		{
 			if(!this._titleLabel)
@@ -327,6 +370,8 @@ package org.josht.foxhole.controls
 			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
 			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
+			const leftContentInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_LEFT_CONTENT);
+			const rightContentInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_RIGHT_CONTENT);
 			
 			if(dataInvalid)
 			{
@@ -338,13 +383,43 @@ package org.josht.foxhole.controls
 				this._titleLabel.textFormat = this._textFormat;
 			}
 			
+			if(leftContentInvalid)
+			{
+				if(this._leftItems)
+				{
+					for each(var item:DisplayObject in this._leftItems)
+					{
+						this.addChild(item);
+					}
+				}
+			}
+			
+			if(rightContentInvalid)
+			{
+				if(this._rightItems)
+				{
+					for each(item in this._rightItems)
+					{
+						this.addChild(item);
+					}
+				}
+			}
+			
 			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
 			
-			if(sizeInvalid || dataInvalid || stylesInvalid)
+			if(sizeInvalid || stylesInvalid)
 			{
 				this.layoutBackground();
-				this.layoutNavigationItems();
-				this.layoutActionItems();
+			}
+			
+			if(sizeInvalid || leftContentInvalid || rightContentInvalid || stylesInvalid)
+			{
+				this.layoutLeftItems();
+				this.layoutRightItems();
+			}
+			
+			if(sizeInvalid || stylesInvalid || dataInvalid || leftContentInvalid || rightContentInvalid)
+			{
 				this.layoutTitle();
 			}
 			
@@ -357,15 +432,14 @@ package org.josht.foxhole.controls
 		{
 			var needsWidth:Boolean = isNaN(this._width);
 			var needsHeight:Boolean = isNaN(this._height);
-			var newWidth:Number = needsWidth ? (2 * this._contentPadding) : this._width;
-			var newHeight:Number = needsHeight ? 0 : this._height;
-			
 			if(!needsWidth && !needsHeight)
 			{
 				return false;
 			}
+			var newWidth:Number = needsWidth ? (2 * this._contentPadding) : this._width;
+			var newHeight:Number = needsHeight ? 0 : this._height;
 			
-			for each(var item:DisplayObject in this._navigationItems)
+			for each(var item:DisplayObject in this._leftItems)
 			{
 				if(item is FoxholeControl)
 				{
@@ -380,7 +454,7 @@ package org.josht.foxhole.controls
 					newHeight = Math.max(newHeight, item.height);
 				}
 			}
-			for each(item in this._actionItems)
+			for each(item in this._rightItems)
 			{
 				if(item is FoxholeControl)
 				{
@@ -443,17 +517,21 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
-		protected function layoutNavigationItems():void
+		protected function layoutLeftItems():void
 		{
-			if(!this._navigationItems)
+			if(!this._leftItems)
 			{
 				return;
 			}
 			var positionX:Number = this._contentPadding;
-			const itemCount:int = this._navigationItems.length;
+			const itemCount:int = this._leftItems.length;
 			for(var i:int = 0; i < itemCount; i++)
 			{
-				var item:DisplayObject = this._navigationItems[i];
+				var item:DisplayObject = this._leftItems[i];
+				if(item is FoxholeControl)
+				{
+					FoxholeControl(item).validate();
+				}
 				item.x = positionX;
 				item.y = (this._height - item.height) / 2;
 				positionX += item.width + this._gap;
@@ -464,20 +542,25 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
-		protected function layoutActionItems():void
+		protected function layoutRightItems():void
 		{
-			if(!this._actionItems)
+			if(!this._rightItems)
 			{
 				return;
 			}
 			var positionX:Number = this._width - this._contentPadding;
-			const itemCount:int = this._actionItems.length;
+			const itemCount:int = this._rightItems.length;
 			for(var i:int = itemCount - 1; i >= 0; i--)
 			{
-				var item:DisplayObject = this._navigationItems[i];
+				var item:DisplayObject = this._rightItems[i];
+				if(item is FoxholeControl)
+				{
+					FoxholeControl(item).validate();
+				}
+				positionX -= item.width;
 				item.x = positionX;
 				item.y = (this._height - item.height) / 2;
-				positionX -= item.width + this._gap;
+				positionX -= this._gap;
 			}
 		}
 		
@@ -490,7 +573,19 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
-			this._titleLabel.x = (this._width - this._titleLabel.width) / 2;
+			this._titleLabel.validate();
+			if(this._titleAlign == TITLE_ALIGN_PREFER_LEFT && (!this._leftItems || this._leftItems.length == 0))
+			{
+				this._titleLabel.x = this._contentPadding;
+			}
+			else if(this._titleAlign == TITLE_ALIGN_PREFER_RIGHT && (!this._rightItems || this._rightItems.length == 0))
+			{
+				this._titleLabel.x = this._width - this._contentPadding - this._titleLabel.width;
+			}
+			else
+			{
+				this._titleLabel.x = (this._width - this._titleLabel.width) / 2;
+			}
 			this._titleLabel.y = (this._height - this._titleLabel.height) / 2;
 		}
 	}
