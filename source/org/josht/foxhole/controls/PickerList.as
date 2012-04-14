@@ -447,6 +447,22 @@ package org.josht.foxhole.controls
 			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
 			const stageSizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STAGE_SIZE);
 			
+			if(stylesInvalid || selectionInvalid)
+			{
+				//this section asks the button to auto-size again, if our
+				//explicit dimensions aren't set.
+				//set this before buttonProperties is used because it might
+				//contain width or height changes.
+				if(isNaN(this.explicitWidth))
+				{
+					this._button.width = NaN;
+				}
+				if(isNaN(this.explicitHeight))
+				{
+					this._button.height = NaN;
+				}
+			}
+			
 			if(stylesInvalid)
 			{
 				this.refreshButtonProperties();
@@ -466,35 +482,10 @@ package org.josht.foxhole.controls
 				this._button.isEnabled = this.isEnabled;
 			}
 			
-			var newWidth:Number = this._width;
-			var newHeight:Number = this._height;
-			var usedTypicalItem:Boolean = false;
-			if(isNaN(newWidth) || isNaN(newHeight))
-			{
-				if(this._typicalItem)
-				{
-					usedTypicalItem = true;
-					this._button.label = this.itemToLabel(this._typicalItem);
-				}
-				else
-				{
-					this.refreshButtonLabel();
-				}
-				this._button.validate();
-				if(isNaN(newWidth))
-				{
-					newWidth = this._button.width;
-					sizeInvalid = true;
-				}
-				if(isNaN(this._height))
-				{
-					newHeight = this._button.height;
-					sizeInvalid = true;
-				}
-				this.setSizeInternal(newWidth, newHeight, false);
-			}
+			var autoSized:Boolean = this.autoSizeIfNeeded();
+			sizeInvalid = autoSized || sizeInvalid;
 			
-			if(selectionInvalid || usedTypicalItem)
+			if(selectionInvalid || autoSized)
 			{
 				this.refreshButtonLabel();
 				this._list.selectedIndex = this._selectedIndex;
@@ -502,16 +493,51 @@ package org.josht.foxhole.controls
 			
 			if(sizeInvalid)
 			{
-				this._button.width = this._width;
-				this._button.height = this._height;
+				this._button.width = this.actualWidth;
+				this._button.height = this.actualHeight;
 			}
-			this._button.validate();
 			
 			if(stageSizeInvalid)
 			{
 				this.resizeAndPositionList();
 			}
 			this._list.validate();
+		}
+		
+		/**
+		 * @private
+		 */
+		protected function autoSizeIfNeeded():Boolean
+		{
+			const needsWidth:Boolean = isNaN(this.explicitWidth);
+			const needsHeight:Boolean = isNaN(this.explicitHeight);
+			if(!needsWidth && !needsHeight)
+			{
+				return false;
+			}
+			
+			if(this._typicalItem)
+			{
+				this._button.label = this.itemToLabel(this._typicalItem);
+			}
+			else
+			{
+				this.refreshButtonLabel();
+			}
+			this._button.validate();
+			
+			var newWidth:Number = this.explicitWidth;
+			var newHeight:Number = this.explicitHeight;
+			if(needsWidth)
+			{
+				newWidth = this._button.width;
+			}
+			if(needsHeight)
+			{
+				newHeight = this._button.height;
+			}
+			this.setSizeInternal(newWidth, newHeight, false);
+			return true;
 		}
 		
 		/**

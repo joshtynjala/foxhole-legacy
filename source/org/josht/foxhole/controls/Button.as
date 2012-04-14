@@ -157,6 +157,9 @@ package org.josht.foxhole.controls
 		 */
 		protected var currentIcon:DisplayObject;
 		
+		/**
+		 * @private
+		 */
 		protected var _touchPointID:int = -1;
 		
 		/**
@@ -196,7 +199,7 @@ package org.josht.foxhole.controls
 		 */
 		protected function get currentState():String
 		{
-			return this._currentState;
+			return _currentState;
 		}
 		
 		/**
@@ -465,6 +468,9 @@ package org.josht.foxhole.controls
 			return Vector.<String>([STATE_UP, STATE_DOWN, STATE_DISABLED, STATE_SELECTED_UP, STATE_SELECTED_DOWN]);
 		}
 		
+		protected var _originalSkinWidth:Number = NaN;
+		protected var _originalSkinHeight:Number = NaN;
+		
 		/**
 		 * @private
 		 */
@@ -507,7 +513,6 @@ package org.josht.foxhole.controls
 			if(this._defaultSkin && this._defaultSkin.parent != this)
 			{
 				this._defaultSkin.visible = false;
-				annihilateMouse(this._defaultSkin, false);
 				this.addChildAt(this._defaultSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -554,7 +559,6 @@ package org.josht.foxhole.controls
 			if(this._defaultSelectedSkin && this._defaultSelectedSkin.parent != this)
 			{
 				this._defaultSelectedSkin.visible = false;
-				annihilateMouse(this._defaultSelectedSkin, false);
 				this.addChildAt(this._defaultSelectedSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -596,7 +600,6 @@ package org.josht.foxhole.controls
 			if(this._upSkin && this._upSkin.parent != this)
 			{
 				this._upSkin.visible = false;
-				annihilateMouse(this._upSkin, false);
 				this.addChildAt(this._upSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -638,7 +641,6 @@ package org.josht.foxhole.controls
 			if(this._downSkin && this._downSkin.parent != this)
 			{
 				this._downSkin.visible = false;
-				annihilateMouse(this._downSkin, false);
 				this.addChildAt(this._downSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -680,7 +682,6 @@ package org.josht.foxhole.controls
 			if(this._disabledSkin && this._disabledSkin.parent != this)
 			{
 				this._disabledSkin.visible = false;
-				annihilateMouse(this._disabledSkin, false);
 				this.addChildAt(this._disabledSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -725,7 +726,6 @@ package org.josht.foxhole.controls
 			if(this._selectedUpSkin && this._selectedUpSkin.parent != this)
 			{
 				this._selectedUpSkin.visible = false;
-				annihilateMouse(this._selectedUpSkin, false);
 				this.addChildAt(this._selectedUpSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -770,7 +770,6 @@ package org.josht.foxhole.controls
 			if(this._selectedDownSkin && this._selectedDownSkin.parent != this)
 			{
 				this._selectedDownSkin.visible = false;
-				annihilateMouse(this._selectedDownSkin, false);
 				this.addChildAt(this._selectedDownSkin, 0);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1009,7 +1008,6 @@ package org.josht.foxhole.controls
 			if(this._defaultIcon && this._defaultIcon.parent != this)
 			{
 				this._defaultIcon.visible = false;
-				annihilateMouse(this._defaultIcon, false);
 				this.addChild(this._defaultIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1056,7 +1054,6 @@ package org.josht.foxhole.controls
 			if(this._defaultSelectedIcon && this._defaultSelectedIcon.parent != this)
 			{
 				this._defaultSelectedIcon.visible = false;
-				annihilateMouse(this._defaultSelectedIcon, false);
 				this.addChild(this._defaultSelectedIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1098,7 +1095,6 @@ package org.josht.foxhole.controls
 			if(this._upIcon && this._upIcon.parent != this)
 			{
 				this._upIcon.visible = false;
-				annihilateMouse(this._upIcon, false);
 				this.addChild(this._upIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1140,7 +1136,6 @@ package org.josht.foxhole.controls
 			if(this._downIcon && this._downIcon.parent != this)
 			{
 				this._downIcon.visible = false;
-				annihilateMouse(this._downIcon, false);
 				this.addChild(this._downIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1182,7 +1177,6 @@ package org.josht.foxhole.controls
 			if(this._disabledIcon && this._disabledIcon.parent != this)
 			{
 				this._disabledIcon.visible = false;
-				annihilateMouse(this._disabledIcon, false);
 				this.addChild(this._disabledIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1227,7 +1221,6 @@ package org.josht.foxhole.controls
 			if(this._selectedUpIcon && this._selectedUpIcon.parent != this)
 			{
 				this._selectedUpIcon.visible = false;
-				annihilateMouse(this._selectedUpIcon, false);
 				this.addChild(this._selectedUpIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1272,7 +1265,6 @@ package org.josht.foxhole.controls
 			if(this._selectedDownIcon && this._selectedDownIcon.parent != this)
 			{
 				this._selectedDownIcon.visible = false;
-				annihilateMouse(this._selectedDownIcon, false);
 				this.addChild(this._selectedDownIcon);
 			}
 			this.invalidate(INVALIDATION_FLAG_STYLES);
@@ -1371,75 +1363,14 @@ package org.josht.foxhole.controls
 				this.labelField.visible = this._label != null;
 			}
 			
-			if(stylesInvalid || stateInvalid || isNaN(this._width) || isNaN(this._height))
+			if(stylesInvalid || stateInvalid)
 			{
 				this.refreshSkin();
 				this.refreshIcon();
 				this.refreshLabelStyles();
-				this.labelField.validate();
-				var newWidth:Number = this._width;
-				var newHeight:Number = this._height;
-				if(isNaN(newWidth))
-				{
-					if(this.currentIcon && this.label)
-					{
-						const adjustedGap:Number = this._gap == Number.POSITIVE_INFINITY ? this._contentPadding : this._gap;
-						newWidth = this.currentIcon.width + adjustedGap + this.labelField.width;
-					}
-					else if(this.currentIcon)
-					{
-						newWidth = this.currentIcon.width;
-					}
-					else if(this.label)
-					{
-						newWidth = this.labelField.width;
-					}
-					newWidth += 2 * this._contentPadding;
-					if(this.currentSkin)
-					{
-						if(isNaN(newWidth))
-						{
-							newWidth = this.currentSkin.width;
-						}
-						else
-						{
-							newWidth = Math.max(newWidth, this.currentSkin.width);
-						}
-					}
-					sizeInvalid = true;
-				}
-				
-				if(isNaN(newHeight))
-				{
-					if(this.currentIcon && this.label)
-					{
-						newHeight = Math.max(this.currentIcon.height, this.labelField.height);
-					}
-					else if(this.currentIcon)
-					{
-						newHeight = this.currentIcon.height;
-					}
-					else if(this.label)
-					{
-						newHeight = this.labelField.height;
-					}
-					newHeight += 2 * this._contentPadding;
-					if(this.currentSkin)
-					{
-						if(isNaN(newHeight))
-						{
-							newHeight = this.currentSkin.height;
-						}
-						else
-						{
-							newHeight = Math.max(newHeight, this.currentSkin.height);
-						}
-					}
-					sizeInvalid = true;
-				}
-				
-				this.setSizeInternal(newWidth, newHeight, false);
 			}
+			
+			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
 			
 			if(stylesInvalid || stateInvalid || sizeInvalid)
 			{
@@ -1459,6 +1390,75 @@ package org.josht.foxhole.controls
 				this.labelField.validate();
 				this.layoutContent();
 			}
+		}
+		
+		/**
+		 * @private
+		 */
+		protected function autoSizeIfNeeded():Boolean
+		{
+			const needsWidth:Boolean = isNaN(this.explicitWidth);
+			const needsHeight:Boolean = isNaN(this.explicitHeight);
+			if(!needsWidth && !needsHeight)
+			{
+				return false;
+			}
+			this.labelField.validate();
+			var newWidth:Number = this.explicitWidth;
+			if(needsWidth)
+			{
+				if(this.currentIcon && this.label)
+				{
+					const adjustedGap:Number = this._gap == Number.POSITIVE_INFINITY ? this._contentPadding : this._gap;
+					newWidth = this.currentIcon.width + adjustedGap + this.labelField.width;
+				}
+				else if(this.currentIcon)
+				{
+					newWidth = this.currentIcon.width;
+				}
+				else if(this.label)
+				{
+					newWidth = this.labelField.width;
+				}
+				newWidth += 2 * this._contentPadding;
+				if(isNaN(newWidth))
+				{
+					newWidth = this._originalSkinWidth;
+				}
+				else if(!isNaN(this._originalSkinWidth))
+				{
+					newWidth = Math.max(newWidth, this._originalSkinWidth);
+				}
+			}
+			
+			var newHeight:Number = this.explicitHeight;
+			if(needsHeight)
+			{
+				if(this.currentIcon && this.label)
+				{
+					newHeight = Math.max(this.currentIcon.height, this.labelField.height);
+				}
+				else if(this.currentIcon)
+				{
+					newHeight = this.currentIcon.height;
+				}
+				else if(this.label)
+				{
+					newHeight = this.labelField.height;
+				}
+				newHeight += 2 * this._contentPadding;
+				if(isNaN(newHeight))
+				{
+					newHeight = this._originalSkinHeight;
+				}
+				else if(!isNaN(this._originalSkinHeight))
+				{
+					newHeight = Math.max(newHeight, this._originalSkinHeight);
+				}
+			}
+			
+			this.setSizeInternal(newWidth, newHeight, false);
+			return true;
 		}
 		
 		/**
@@ -1546,6 +1546,14 @@ package org.josht.foxhole.controls
 			if(this.currentSkin)
 			{
 				this.currentSkin.visible = true;
+				if(isNaN(this._originalSkinWidth))
+				{
+					this._originalSkinWidth = this.currentSkin.width;
+				}
+				if(isNaN(this._originalSkinHeight))
+				{
+					this._originalSkinHeight = this.currentSkin.height;
+				}
 			}
 			else
 			{
@@ -1694,13 +1702,13 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
-			if(this.currentSkin.width != this._width)
+			if(this.currentSkin.width != this.actualWidth)
 			{
-				this.currentSkin.width = this._width;
+				this.currentSkin.width = this.actualWidth;
 			}
-			if(this.currentSkin.height != this._height)
+			if(this.currentSkin.height != this.actualHeight)
 			{
-				this.currentSkin.height = this._height;
+				this.currentSkin.height = this.actualHeight;
 			}
 		}
 		
@@ -1735,11 +1743,11 @@ package org.josht.foxhole.controls
 			}
 			else if(this._horizontalAlign == HORIZONTAL_ALIGN_RIGHT)
 			{
-				displayObject.x = this._width - this._contentPadding - displayObject.width;
+				displayObject.x = this.actualWidth - this._contentPadding - displayObject.width;
 			}
 			else //center
 			{
-				displayObject.x = (this._width - displayObject.width) / 2;
+				displayObject.x = (this.actualWidth - displayObject.width) / 2;
 			}
 			if(this._verticalAlign == VERTICAL_ALIGN_TOP)
 			{
@@ -1747,25 +1755,25 @@ package org.josht.foxhole.controls
 			}
 			else if(this._verticalAlign == VERTICAL_ALIGN_BOTTOM)
 			{
-				displayObject.y = this._height - this._contentPadding - displayObject.height;
+				displayObject.y = this.actualHeight - this._contentPadding - displayObject.height;
 			}
 			else //middle
 			{
-				displayObject.y = (this._height - displayObject.height) / 2;
+				displayObject.y = (this.actualHeight - displayObject.height) / 2;
 			}
 		}
 		
 		/**
 		 * @private
 		 */
-		private function positionLabelAndIcon():void
+		protected function positionLabelAndIcon():void
 		{
 			if(this._iconPosition == ICON_POSITION_TOP)
 			{
 				if(this._gap == Number.POSITIVE_INFINITY)
 				{
 					this.currentIcon.y = this._contentPadding;
-					this.labelField.y = this._height - this._contentPadding - this.labelField.height;
+					this.labelField.y = this.actualHeight - this._contentPadding - this.labelField.height;
 				}
 				else
 				{
@@ -1785,7 +1793,7 @@ package org.josht.foxhole.controls
 				if(this._gap == Number.POSITIVE_INFINITY)
 				{
 					this.labelField.x = this._contentPadding;
-					this.currentIcon.x = this._width - this._contentPadding - this.currentIcon.width;
+					this.currentIcon.x = this.actualWidth - this._contentPadding - this.currentIcon.width;
 				}
 				else
 				{
@@ -1805,7 +1813,7 @@ package org.josht.foxhole.controls
 				if(this._gap == Number.POSITIVE_INFINITY)
 				{
 					this.labelField.y = this._contentPadding;
-					this.currentIcon.y = this._height - this._contentPadding - this.currentIcon.height;
+					this.currentIcon.y = this.actualHeight - this._contentPadding - this.currentIcon.height;
 				}
 				else
 				{
@@ -1825,7 +1833,7 @@ package org.josht.foxhole.controls
 				if(this._gap == Number.POSITIVE_INFINITY)
 				{
 					this.currentIcon.x = this._contentPadding;
-					this.labelField.x = this._width - this._contentPadding - this.labelField.width;
+					this.labelField.x = this.actualWidth - this._contentPadding - this.labelField.width;
 				}
 				else
 				{

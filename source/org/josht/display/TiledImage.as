@@ -39,17 +39,19 @@ package org.josht.display
 		/**
 		 * Constructor.
 		 */
-		public function TiledImage(texture:BitmapData)
+		public function TiledImage(texture:BitmapData, textureScale:Number = 1)
 		{
 			super();
+			this.textureScale = textureScale;
 			this.texture = texture;
+			this.initializeWidthAndHeight();
 			this.mouseChildren = false;
 		}
 		
 		/**
 		 * @private
 		 */
-		private var _width:Number = 100;
+		private var _width:Number = NaN;
 		
 		/**
 		 * @inheritDoc
@@ -75,7 +77,7 @@ package org.josht.display
 		/**
 		 * @private
 		 */
-		private var _height:Number = 100;
+		private var _height:Number = NaN;
 		
 		/**
 		 * @inheritDoc
@@ -174,6 +176,7 @@ package org.josht.display
 			{
 				return;
 			}
+			this._matrix.identity();
 			this._matrix.scale(value, value);
 			this.redraw();
 		}
@@ -197,6 +200,15 @@ package org.josht.display
 			this.graphics.beginBitmapFill(this.texture, this._matrix, true, this._smoothing);
 			this.graphics.drawRect(0, 0, this._width, this._height);
 			this.graphics.endFill();
+		}
+		
+		/**
+		 * @private
+		 */
+		private function initializeWidthAndHeight():void
+		{
+			this.width = this._texture.width * this.textureScale;
+			this.height = this._texture.height * this.textureScale;
 		}
 	}
 }

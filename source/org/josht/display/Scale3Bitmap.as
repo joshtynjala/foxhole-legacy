@@ -58,7 +58,7 @@ package org.josht.display
 		/**
 		 * Constructor.
 		 */
-		public function Scale3Bitmap(texture:BitmapData, firstRegionSize:Number, secondRegionSize:Number, direction:String = DIRECTION_HORIZONTAL)
+		public function Scale3Bitmap(texture:BitmapData, firstRegionSize:Number, secondRegionSize:Number, direction:String = DIRECTION_HORIZONTAL, textureScale:Number = 1)
 		{
 			super();
 			
@@ -66,6 +66,8 @@ package org.josht.display
 			this._firstRegionSize = firstRegionSize;
 			this._secondRegionSize = secondRegionSize;
 			this._direction = direction;
+			this._textureScale = textureScale;
+			this.initializeWidthAndHeight();
 			this.mouseChildren = false;
 		}
 		
@@ -226,21 +228,11 @@ package org.josht.display
 			
 			if(this._direction == DIRECTION_VERTICAL)
 			{
-				var scaledOppositeEdgeSize:Number = isNaN(this._width) ? (this._oppositeEdgeSize * this._textureScale) : this._width;
+				var scaledOppositeEdgeSize:Number = this.actualWidth;
 				var oppositeEdgeScale:Number = scaledOppositeEdgeSize / this._oppositeEdgeSize;
 				var scaledFirstRegionSize:Number = this._firstRegionSize * oppositeEdgeScale;
 				var scaledThirdRegionSize:Number = this._thirdRegionSize * oppositeEdgeScale;
-				
-				if(isNaN(this._width))
-				{
-					this._width = scaledOppositeEdgeSize;
-				}
-				if(isNaN(this._height))
-				{
-					var scaledSecondRegionSize:Number = this._secondRegionSize * oppositeEdgeScale;
-					this._height = scaledFirstRegionSize + scaledSecondRegionSize + scaledThirdRegionSize;
-				}
-				scaledSecondRegionSize = this._height - scaledFirstRegionSize - scaledSecondRegionSize;
+				var scaledSecondRegionSize:Number = this.actualHeight - scaledFirstRegionSize - scaledSecondRegionSize;
 				var secondRegionScale:Number = Math.max(0, scaledSecondRegionSize / this._secondRegionSize);
 				
 				HELPER_MATRIX.identity();
@@ -253,7 +245,7 @@ package org.josht.display
 				}
 				if(this._third)
 				{
-					HELPER_MATRIX.ty = this._height - scaledThirdRegionSize
+					HELPER_MATRIX.ty = this.actualHeight - scaledThirdRegionSize
 					this.graphics.beginBitmapFill(this._third, HELPER_MATRIX, false, this._smoothing);
 					this.graphics.drawRect(0, HELPER_MATRIX.ty, scaledOppositeEdgeSize, scaledThirdRegionSize);
 					this.graphics.endFill();
@@ -270,21 +262,11 @@ package org.josht.display
 			}
 			else //horizontal
 			{
-				scaledOppositeEdgeSize = isNaN(this._height) ? (this._oppositeEdgeSize * this._textureScale) : this._height;
+				scaledOppositeEdgeSize = this.actualHeight;
 				oppositeEdgeScale = scaledOppositeEdgeSize / this._oppositeEdgeSize;
 				scaledFirstRegionSize = this._firstRegionSize * oppositeEdgeScale;
 				scaledThirdRegionSize = this._thirdRegionSize * oppositeEdgeScale;
-				
-				if(isNaN(this._width))
-				{
-					scaledSecondRegionSize = this._secondRegionSize * oppositeEdgeScale;
-					this._width = scaledFirstRegionSize + scaledSecondRegionSize + scaledThirdRegionSize;
-				}
-				if(isNaN(this._height))
-				{
-					this._height = scaledOppositeEdgeSize;
-				}
-				scaledSecondRegionSize = this._width - scaledFirstRegionSize - scaledThirdRegionSize;
+				scaledSecondRegionSize = this.actualWidth - scaledFirstRegionSize - scaledThirdRegionSize;
 				secondRegionScale = Math.max(0, scaledSecondRegionSize / this._secondRegionSize);
 				
 				HELPER_MATRIX.identity();
@@ -297,8 +279,8 @@ package org.josht.display
 				}
 				if(this._third)
 				{
-					HELPER_MATRIX.tx = this._width - scaledThirdRegionSize;
-					this.graphics.moveTo(this._width - scaledThirdRegionSize, 0);
+					HELPER_MATRIX.tx = this.actualWidth - scaledThirdRegionSize;
+					this.graphics.moveTo(this.actualWidth - scaledThirdRegionSize, 0);
 					this.graphics.beginBitmapFill(this._third, HELPER_MATRIX, false, this._smoothing);
 					this.graphics.drawRect(HELPER_MATRIX.tx, 0, scaledThirdRegionSize, scaledOppositeEdgeSize);
 					this.graphics.endFill();
@@ -313,6 +295,26 @@ package org.josht.display
 					this.graphics.endFill();
 				}
 			}
+		}
+		
+		/**
+		 * @private
+		 */
+		private function initializeWidthAndHeight():void
+		{
+			var width:Number;
+			var height:Number;
+			if(this._direction == DIRECTION_VERTICAL)
+			{
+				width = this._oppositeEdgeSize * this._textureScale;
+				height = (this._firstRegionSize + this._secondRegionSize + this._thirdRegionSize) * this._textureScale;
+			}
+			else //horizontal
+			{
+				width = (this._firstRegionSize + this._secondRegionSize + this._thirdRegionSize) * this._textureScale;
+				height = this._oppositeEdgeSize * this._textureScale;
+			}
+			this.setSizeInternal(width, height, true);
 		}
 	}
 }

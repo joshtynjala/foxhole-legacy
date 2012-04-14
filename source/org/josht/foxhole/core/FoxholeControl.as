@@ -25,10 +25,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 package org.josht.foxhole.core
 {
 	import flash.display.Shape;
+	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.geom.Rectangle;
 	import flash.utils.Dictionary;
 	
-	import flash.display.Sprite;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
@@ -216,16 +217,30 @@ package org.josht.foxhole.core
 		}
 		
 		/**
-		 * @private
+		 * The width value explicitly set by calling the width setter or
+		 * setSize().
 		 */
-		protected var _width:Number = NaN;
+		protected var explicitWidth:Number = NaN;
 		
 		/**
-		 * @inheritDoc
+		 * The final width value that should be used for layout. If the width
+		 * has been explicitly set, then that value is used. If not, the actual
+		 * width will be calculated automatically. Each component has different
+		 * automatic sizing behavior, but it's usually based on the component's
+		 * skin or content, including text or sub-components.
+		 */
+		protected var actualWidth:Number = NaN;
+		
+		/**
+		 * The width of the component, in pixels. This could be a value that was
+		 * set explicitly, or the component will automatically resize if no
+		 * explicit width value is provided. Each component has a different
+		 * automatic sizing behavior, but it's usually based on the component's
+		 * skin or content, including text or sub-components.
 		 */
 		override public function get width():Number
 		{
-			return this._width;
+			return this.actualWidth;
 		}
 		
 		/**
@@ -233,20 +248,35 @@ package org.josht.foxhole.core
 		 */
 		override public function set width(value:Number):void
 		{
-			this.setSize(value, this._height);
+			this.explicitWidth = value;
+			this.setSizeInternal(value, this.actualHeight, true);
 		}
 		
 		/**
-		 * @private
+		 * The height value explicitly set by calling the height setter or
+		 * setSize().
 		 */
-		protected var _height:Number = NaN;
+		protected var explicitHeight:Number = NaN;
 		
 		/**
-		 * @inheritDoc
+		 * The final height value that should be used for layout. If the height
+		 * has been explicitly set, then that value is used. If not, the actual
+		 * height will be calculated automatically. Each component has different
+		 * automatic sizing behavior, but it's usually based on the component's
+		 * skin or content, including text or sub-components.
+		 */
+		protected var actualHeight:Number = NaN;
+		
+		/**
+		 * The height of the component, in pixels. This could be a value that
+		 * was set explicitly, or the component will automatically resize if no
+		 * explicit height value is provided. Each component has a different
+		 * automatic sizing behavior, but it's usually based on the component's
+		 * skin or content, including text or sub-components.
 		 */
 		override public function get height():Number
 		{
-			return this._height;
+			return this.actualHeight;
 		}
 		
 		/**
@@ -254,7 +284,66 @@ package org.josht.foxhole.core
 		 */
 		override public function set height(value:Number):void
 		{
-			this.setSize(this._width, value);
+			this.explicitHeight = value;
+			this.setSizeInternal(this.explicitWidth, value, true);
+		}
+		
+		/**
+		 * @private
+		 */
+		private var _minWidth:Number = 0;
+		
+		/**
+		 * The minimum recommend width to be used for self-measurement and,
+		 * optionally, by the parent who is resizing this component. A width
+		 * value that is smaller than <code>minWidth</code> may be set
+		 * explicitly, and it will not be affected by this value.
+		 */
+		public function get minWidth():Number
+		{
+			return this._minWidth;
+		}
+		
+		/**
+		 * @private
+		 */
+		public function set minWidth(value:Number):void
+		{
+			if(this._minWidth == value)
+			{
+				return;
+			}
+			this._minWidth = value;
+			this.invalidate(INVALIDATION_FLAG_SIZE);
+		}
+		
+		/**
+		 * @private
+		 */
+		private var _minHeight:Number = 0;
+		
+		/**
+		 * The minimum recommend height to be used for self-measurement and,
+		 * optionally, by the parent who is resizing this component. A height
+		 * value that is smaller than <code>minHeight</code> may be set
+		 * explicitly, and it will not be affected by this value.
+		 */
+		public function get minHeight():Number
+		{
+			return this._minHeight;
+		}
+		
+		/**
+		 * @private
+		 */
+		public function set minHeight(value:Number):void
+		{
+			if(this._minHeight == value)
+			{
+				return;
+			}
+			this._minHeight = value;
+			this.invalidate(INVALIDATION_FLAG_SIZE);
 		}
 		
 		/**
@@ -380,14 +469,30 @@ package org.josht.foxhole.core
 		protected function setSizeInternal(width:Number, height:Number, canInvalidate:Boolean):void
 		{
 			var resized:Boolean = false;
-			if(this._width != width)
+			if(!isNaN(this.explicitWidth))
 			{
-				this._width = width;
+				width = this.explicitWidth;
+			}
+			else
+			{
+				width = Math.max(this._minWidth, width);
+			}
+			if(!isNaN(this.explicitHeight))
+			{
+				height = this.explicitHeight;
+			}
+			else
+			{
+				height = Math.max(this._minHeight, height);
+			}
+			if(this.actualWidth != width)
+			{
+				this.actualWidth = width;
 				resized = true;
 			}
-			if(this._height != height)
+			if(this.actualHeight != height)
 			{
-				this._height = height;
+				this.actualHeight = height;
 				resized = true;
 			}
 			if(resized)

@@ -554,16 +554,18 @@ package org.josht.foxhole.controls
 		 */
 		override protected function draw():void
 		{
-			const sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
+			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
 			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
 			const scrollInvalid:Boolean = dataInvalid || this.isInvalid(INVALIDATION_FLAG_SCROLL);
 			const clippingInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_CLIPPING);
+			
+			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
 			
 			if(sizeInvalid)
 			{
 				this.graphics.clear();
 				this.graphics.beginFill(0xff00ff, 0);
-				this.graphics.drawRect(0, 0, this._width, this._height);
+				this.graphics.drawRect(0, 0, this.actualWidth, this.actualHeight);
 				this.graphics.endFill();
 			}
 			
@@ -585,8 +587,8 @@ package org.josht.foxhole.controls
 				this._velocityY = this._previousVelocityY = 0;
 				if(this._viewPort)
 				{
-					this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width - this._width);
-					this._maxVerticalScrollPosition = Math.max(0, this._viewPort.height - this._height);
+					this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width - this.actualWidth);
+					this._maxVerticalScrollPosition = Math.max(0, this._viewPort.height - this.actualHeight);
 				}
 				else
 				{
@@ -606,30 +608,56 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
+		protected function autoSizeIfNeeded():Boolean
+		{
+			const needsWidth:Boolean = isNaN(this.explicitWidth);
+			const needsHeight:Boolean = isNaN(this.explicitHeight);
+			if(!needsWidth && !needsHeight)
+			{
+				return false;
+			}
+			
+			var newWidth:Number = this.explicitWidth;
+			var newHeight:Number = this.explicitHeight;
+			if(needsWidth)
+			{
+				newWidth = this._viewPort.width;
+			}
+			if(needsHeight)
+			{
+				newHeight = this._viewPort.height;
+			}
+			this.setSizeInternal(newWidth, newHeight, false);
+			return true;
+		}
+		
+		/**
+		 * @private
+		 */
 		protected function scrollContent():void
-		{	
+		{
 			var offsetX:Number = 0;
 			var offsetY:Number = 0;
 			if(this._maxHorizontalScrollPosition == 0)
 			{
 				if(this._horizontalAlign == HORIZONTAL_ALIGN_CENTER)
 				{
-					offsetX = (this._width - this._viewPort.width) / 2;
+					offsetX = (this.actualWidth - this._viewPort.width) / 2;
 				}
 				else if(this._horizontalAlign == HORIZONTAL_ALIGN_RIGHT)
 				{
-					offsetX = this._width - this._viewPort.width;	
+					offsetX = this.actualWidth - this._viewPort.width;
 				}
 			}
 			if(this._maxVerticalScrollPosition == 0)
 			{
 				if(this._verticalAlign == VERTICAL_ALIGN_MIDDLE)
 				{
-					offsetY = (this._height - this._viewPort.height) / 2;
+					offsetY = (this.actualHeight - this._viewPort.height) / 2;
 				}
 				else if(this._verticalAlign == VERTICAL_ALIGN_BOTTOM)
 				{
-					offsetY = this._height - this._viewPort.height;	
+					offsetY = this.actualHeight - this._viewPort.height;
 				}
 			}
 			if(this._clipContent)
@@ -642,8 +670,8 @@ package org.josht.foxhole.controls
 				}
 				
 				const scrollRect:Rectangle = this._viewPortWrapper.scrollRect;
-				scrollRect.width = this._width;
-				scrollRect.height = this._height;
+				scrollRect.width = this.actualWidth;
+				scrollRect.height = this.actualHeight;
 				scrollRect.x = this._horizontalScrollPosition - offsetX;
 				scrollRect.y = this._verticalScrollPosition - offsetY;
 				this._viewPortWrapper.scrollRect = scrollRect;

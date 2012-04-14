@@ -389,6 +389,7 @@ package org.josht.foxhole.controls
 				{
 					for each(var item:DisplayObject in this._leftItems)
 					{
+						item.name = "foxhole-header-item";
 						this.addChild(item);
 					}
 				}
@@ -400,6 +401,7 @@ package org.josht.foxhole.controls
 				{
 					for each(item in this._rightItems)
 					{
+						item.name = "foxhole-header-item";
 						this.addChild(item);
 					}
 				}
@@ -430,14 +432,14 @@ package org.josht.foxhole.controls
 		 */
 		protected function autoSizeIfNeeded():Boolean
 		{
-			var needsWidth:Boolean = isNaN(this._width);
-			var needsHeight:Boolean = isNaN(this._height);
+			const needsWidth:Boolean = isNaN(this.explicitWidth);
+			const needsHeight:Boolean = isNaN(this.explicitHeight);
 			if(!needsWidth && !needsHeight)
 			{
 				return false;
 			}
-			var newWidth:Number = needsWidth ? (2 * this._contentPadding) : this._width;
-			var newHeight:Number = needsHeight ? 0 : this._height;
+			var newWidth:Number = needsWidth ? (2 * this._contentPadding) : this.explicitWidth;
+			var newHeight:Number = needsHeight ? 0 : this.explicitHeight;
 			
 			for each(var item:DisplayObject in this._leftItems)
 			{
@@ -509,8 +511,8 @@ package org.josht.foxhole.controls
 			if(backgroundSkin)
 			{
 				backgroundSkin.visible = true;
-				backgroundSkin.width = this._width;
-				backgroundSkin.height = this._height;
+				backgroundSkin.width = this.actualWidth;
+				backgroundSkin.height = this.actualHeight;
 			}
 		}
 		
@@ -533,7 +535,7 @@ package org.josht.foxhole.controls
 					FoxholeControl(item).validate();
 				}
 				item.x = positionX;
-				item.y = (this._height - item.height) / 2;
+				item.y = (this.actualHeight - item.height) / 2;
 				positionX += item.width + this._gap;
 			}
 			
@@ -548,7 +550,7 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
-			var positionX:Number = this._width - this._contentPadding;
+			var positionX:Number = this.actualWidth - this._contentPadding;
 			const itemCount:int = this._rightItems.length;
 			for(var i:int = itemCount - 1; i >= 0; i--)
 			{
@@ -559,7 +561,7 @@ package org.josht.foxhole.controls
 				}
 				positionX -= item.width;
 				item.x = positionX;
-				item.y = (this._height - item.height) / 2;
+				item.y = (this.actualHeight - item.height) / 2;
 				positionX -= this._gap;
 			}
 		}
@@ -580,13 +582,13 @@ package org.josht.foxhole.controls
 			}
 			else if(this._titleAlign == TITLE_ALIGN_PREFER_RIGHT && (!this._rightItems || this._rightItems.length == 0))
 			{
-				this._titleLabel.x = this._width - this._contentPadding - this._titleLabel.width;
+				this._titleLabel.x = this.actualWidth - this._contentPadding - this._titleLabel.width;
 			}
 			else
 			{
-				this._titleLabel.x = (this._width - this._titleLabel.width) / 2;
+				this._titleLabel.x = (this.actualWidth - this._titleLabel.width) / 2;
 			}
-			this._titleLabel.y = (this._height - this._titleLabel.height) / 2;
+			this._titleLabel.y = (this.actualHeight - this._titleLabel.height) / 2;
 		}
 	}
 }

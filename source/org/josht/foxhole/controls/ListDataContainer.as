@@ -145,6 +145,8 @@ package org.josht.foxhole.controls
 			this.invalidate(INVALIDATION_FLAG_ITEM_RENDERER);
 		}
 		
+		private var _typicalItemWidth:Number = NaN;
+		
 		private var _typicalItem:Object = null;
 		
 		public function get typicalItem():Object
@@ -159,6 +161,7 @@ package org.josht.foxhole.controls
 				return;
 			}
 			this._typicalItem = value;
+			this._typicalItemWidth = NaN;
 			this.invalidate(INVALIDATION_FLAG_ITEM_RENDERER);
 		}
 		
@@ -308,41 +311,7 @@ package org.josht.foxhole.controls
 			const itemRendererInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_ITEM_RENDERER);
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			
-			var newWidth:Number = this._width;
-			var newHeight:Number = this._height;
-			if(isNaN(newWidth) || isNaN(this._rowHeight))
-			{
-				var typicalItem:Object = this._typicalItem;
-				if(!typicalItem && this._dataProvider && this._dataProvider.length > 0)
-				{
-					typicalItem = this._dataProvider.getItemAt(0);
-				}
-				if(typicalItem)
-				{
-					const typicalRenderer:IListItemRenderer = this.createRenderer(typicalItem, 0, true);
-					this.refreshOneItemRendererStyles(typicalRenderer);
-					if(typicalRenderer is FoxholeControl)
-					{
-						FoxholeControl(typicalRenderer).validate();
-					}
-					if(isNaN(newWidth))
-					{
-						newWidth = DisplayObject(typicalRenderer).width;
-						sizeInvalid = true;
-					}
-					if(isNaN(this._rowHeight))
-					{
-						this._rowHeight = DisplayObject(typicalRenderer).height;
-					}
-					this.destroyRenderer(typicalRenderer);
-				}
-			}
-			
-			if(dataInvalid || isNaN(newHeight))
-			{
-				newHeight = this._dataProvider ? (this._rowHeight * this._dataProvider.length) : 0;
-			}
-			this.setSizeInternal(newWidth, newHeight, false);
+			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
 			
 			this.refreshRenderers(itemRendererInvalid);
 			this.drawRenderers();
@@ -359,6 +328,43 @@ package org.josht.foxhole.controls
 					FoxholeControl(itemRenderer).validate();
 				}
 			}
+		}
+		
+		protected function autoSizeIfNeeded():Boolean
+		{
+			const needsTypicalItemWidth:Boolean = isNaN(this.explicitWidth) && isNaN(this._typicalItemWidth);
+			const needsRowHeight:Boolean = isNaN(this._rowHeight);
+			
+			if(needsTypicalItemWidth || needsRowHeight)
+			{
+				var typicalItem:Object = this._typicalItem;
+				if(!typicalItem && this._dataProvider && this._dataProvider.length > 0)
+				{
+					typicalItem = this._dataProvider.getItemAt(0);
+				}
+				if(typicalItem)
+				{
+					const typicalRenderer:IListItemRenderer = this.createRenderer(typicalItem, 0, true);
+					this.refreshOneItemRendererStyles(typicalRenderer);
+					if(typicalRenderer is FoxholeControl)
+					{
+						FoxholeControl(typicalRenderer).validate();
+					}
+					if(needsTypicalItemWidth)
+					{
+						this._typicalItemWidth = DisplayObject(typicalRenderer).width;
+					}
+					if(needsRowHeight)
+					{
+						this._rowHeight = DisplayObject(typicalRenderer).height;
+					}
+					this.destroyRenderer(typicalRenderer);
+				}
+			}
+			var newWidth:Number = isNaN(this.explicitWidth) ? this._typicalItemWidth : this.explicitWidth;
+			var newHeight:Number = isNaN(this._rowHeight) ? 0 : (this._rowHeight * this._dataProvider.length);
+			this.setSizeInternal(newWidth, newHeight, false);
+			return true;
 		}
 		
 		protected function itemToItemRenderer(item:Object):IListItemRenderer
@@ -410,7 +416,7 @@ package org.josht.foxhole.controls
 			{
 				var renderer:IListItemRenderer = this._activeRenderers[i];
 				var displayRenderer:DisplayObject = DisplayObject(renderer);
-				displayRenderer.width = this._width;
+				displayRenderer.width = this.actualWidth;
 				displayRenderer.height = this._rowHeight;
 				displayRenderer.y = this._rowHeight * renderer.index;
 			}

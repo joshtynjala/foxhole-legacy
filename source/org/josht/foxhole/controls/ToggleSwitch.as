@@ -657,31 +657,12 @@ package org.josht.foxhole.controls
 				this.refreshThumbProperties();
 			}
 			
-			this.thumb.validate();
-			
-			var newWidth:Number = this._width;
-			var newHeight:Number = this._height;
-			if(isNaN(newWidth) || isNaN(newHeight))
-			{
-				if(isNaN(newWidth))
-				{
-					newWidth = this.onSkinOriginalWidth + this.offSkinOriginalWidth - this.thumb.width;
-					sizeInvalid = true;
-				}
-				
-				if(isNaN(newHeight))
-				{
-					newHeight = Math.max(this.onSkinOriginalHeight, this.offSkinOriginalHeight);
-					sizeInvalid = true;
-				}
-				
-				this.setSizeInternal(newWidth, newHeight, false);
-			}
+			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
 			
 			if(stylesInvalid || sizeInvalid || stateInvalid)
 			{
 				this.scaleSkins();
-				this.thumb.y = (this._height - this.thumb.height) / 2;
+				this.thumb.y = (this.actualHeight - this.thumb.height) / 2;
 				this.drawLabels();
 			}
 			
@@ -694,12 +675,41 @@ package org.josht.foxhole.controls
 		/**
 		 * @private
 		 */
+		protected function autoSizeIfNeeded():Boolean
+		{
+			const needsWidth:Boolean = isNaN(this.explicitWidth);
+			const needsHeight:Boolean = isNaN(this.explicitHeight);
+			if(!needsWidth && !needsHeight)
+			{
+				return false;
+			}
+			
+			this.thumb.validate();
+			
+			var newWidth:Number = this.explicitWidth;
+			var newHeight:Number = this.explicitHeight;
+			if(needsWidth)
+			{
+				newWidth = this.onSkinOriginalWidth + this.offSkinOriginalWidth - this.thumb.width;
+			}
+			
+			if(needsHeight)
+			{
+				newHeight = Math.max(this.onSkinOriginalHeight, this.offSkinOriginalHeight);
+			}
+			this.setSizeInternal(newWidth, newHeight, false);
+			return true;
+		}
+		
+		/**
+		 * @private
+		 */
 		protected function updateSelection():void
 		{
 			var xPosition:Number = this._contentPadding;
 			if(this._isSelected)
 			{
-				xPosition = this._width - this.thumb.width - this._contentPadding;
+				xPosition = this.actualWidth - this.thumb.width - this._contentPadding;
 			}
 			
 			//stop the tween, no matter what
@@ -825,7 +835,7 @@ package org.josht.foxhole.controls
 		 */
 		private function scaleSkins():void
 		{
-			const skinScale:Number = this._height / Math.max(this.onSkinOriginalHeight, this.offSkinOriginalHeight);
+			const skinScale:Number = this.actualHeight / Math.max(this.onSkinOriginalHeight, this.offSkinOriginalHeight);
 			this.onSkin.scaleX = this.onSkinOriginalScaleX * skinScale;
 			this.onSkin.scaleY = this.onSkinOriginalScaleY * skinScale;
 			this.offSkin.scaleX = this.offSkinOriginalScaleX * skinScale;
@@ -838,7 +848,7 @@ package org.josht.foxhole.controls
 		 */
 		private function drawLabels():void
 		{
-			const maxLabelWidth:Number = Math.max(0, this._width - this.thumb.width - 2 * this._contentPadding);
+			const maxLabelWidth:Number = Math.max(0, this.actualWidth - this.thumb.width - 2 * this._contentPadding);
 			var totalLabelHeight:Number = Math.max(this.onLabelField.height, this.offLabelField.height);
 			var labelHeight:Number;
 			if(this._labelAlign == LABEL_ALIGN_MIDDLE || !this._defaultTextFormat || !(this._defaultTextFormat.font is BitmapFont))
@@ -857,15 +867,15 @@ package org.josht.foxhole.controls
 			this.onLabelField.scrollRect = onScrollRect;
 			
 			this.onLabelField.x = this._contentPadding;
-			this.onLabelField.y = (this._height - labelHeight) / 2;
+			this.onLabelField.y = (this.actualHeight - labelHeight) / 2;
 			
 			var offScrollRect:Rectangle = this.offLabelField.scrollRect;
 			offScrollRect.width = maxLabelWidth;
 			offScrollRect.height = totalLabelHeight;
 			this.offLabelField.scrollRect = offScrollRect;
 			
-			this.offLabelField.x = this._width - this._contentPadding - maxLabelWidth;
-			this.offLabelField.y = (this._height - labelHeight) / 2;
+			this.offLabelField.x = this.actualWidth - this._contentPadding - maxLabelWidth;
+			this.offLabelField.y = (this.actualHeight - labelHeight) / 2;
 		}
 		
 		/**
@@ -873,13 +883,13 @@ package org.josht.foxhole.controls
 		 */
 		private function updateScrollRects():void
 		{
-			const maxLabelWidth:Number = Math.max(0, this._width - this.thumb.width - 2 * this._contentPadding);
+			const maxLabelWidth:Number = Math.max(0, this.actualWidth - this.thumb.width - 2 * this._contentPadding);
 			const thumbOffset:Number = this.thumb.x - this._contentPadding;
-			const halfWidth:Number = (this._width - 2 * this._contentPadding) / 2;
+			const halfWidth:Number = (this.actualWidth - 2 * this._contentPadding) / 2;
 			const middleOfThumb:Number = this.thumb.x + this.thumb.width / 2;
 			
 			var currentScrollRect:Rectangle = this.onLabelField.scrollRect;
-			currentScrollRect.x = this._width - this.thumb.width - thumbOffset - (maxLabelWidth - this.onLabelField.width) / 2;
+			currentScrollRect.x = this.actualWidth - this.thumb.width - thumbOffset - (maxLabelWidth - this.onLabelField.width) / 2;
 			this.onLabelField.scrollRect = currentScrollRect;
 			
 			currentScrollRect = this.offLabelField.scrollRect;
@@ -889,14 +899,14 @@ package org.josht.foxhole.controls
 			const onSkinScaledWidth:Number = this.onSkinOriginalWidth * this._onSkin.scaleX;
 			currentScrollRect = this._onSkin.scrollRect;
 			currentScrollRect.width = Math.min(onSkinScaledWidth, middleOfThumb) / this._onSkin.scaleX;
-			currentScrollRect.height = this._height / this._onSkin.scaleX;
+			currentScrollRect.height = this.actualHeight / this._onSkin.scaleX;
 			this._onSkin.scrollRect = currentScrollRect;
 			
 			const offSkinScaledWidth:Number = this.offSkinOriginalWidth * this._offSkin.scaleX;
-			this._offSkin.x = Math.max(this._width - offSkinScaledWidth, middleOfThumb);
+			this._offSkin.x = Math.max(this.actualWidth - offSkinScaledWidth, middleOfThumb);
 			currentScrollRect = this._offSkin.scrollRect;
-			currentScrollRect.width = Math.min(offSkinScaledWidth, this._width - middleOfThumb) / this._offSkin.scaleX;
-			currentScrollRect.height = this._height / this._offSkin.scaleX;
+			currentScrollRect.width = Math.min(offSkinScaledWidth, this.actualWidth - middleOfThumb) / this._offSkin.scaleX;
+			currentScrollRect.height = this.actualHeight / this._offSkin.scaleX;
 			currentScrollRect.x = Math.max(0, this.offSkinOriginalWidth - currentScrollRect.width);
 			this._offSkin.scrollRect = currentScrollRect;
 		}
@@ -972,7 +982,7 @@ package org.josht.foxhole.controls
 			}
 			
 			const stageX:Number = (event is TouchEvent) ? TouchEvent(event).stageX : MouseEvent(event).stageX;
-			const trackScrollableWidth:Number = this._width - 2 * this._contentPadding - this.thumb.width;
+			const trackScrollableWidth:Number = this.actualWidth - 2 * this._contentPadding - this.thumb.width;
 			const xOffset:Number = stageX - this._touchStartX;
 			const xPosition:Number = Math.min(Math.max(this._contentPadding, this._thumbStartX + xOffset), trackScrollableWidth);
 			this.thumb.x = xPosition;
@@ -986,7 +996,7 @@ package org.josht.foxhole.controls
 				return;
 			}
 			const stageX:Number = (event is TouchEvent) ? TouchEvent(event).stageX : MouseEvent(event).stageX;
-			const trackScrollableWidth:Number = this._width - 2 * this._contentPadding - this.thumb.width;
+			const trackScrollableWidth:Number = this.actualWidth - 2 * this._contentPadding - this.thumb.width;
 			const inchesMoved:Number = Math.abs(stageX - this._touchStartX) / Capabilities.screenDPI;
 			if(inchesMoved > MINIMUM_DRAG_DISTANCE)
 			{

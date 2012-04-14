@@ -48,11 +48,14 @@ package org.josht.display
 		/**
 		 * Constructor.
 		 */
-		public function Scale9Bitmap(texture:BitmapData, scale9Grid:Rectangle)
+		public function Scale9Bitmap(texture:BitmapData, scale9Grid:Rectangle, textureScale:Number = 1)
 		{
 			super();
 			this._texture = texture
 			this._scale9Grid = scale9Grid;
+			this._textureScale = textureScale;
+			this.saveRegions();
+			this.initializeWidthAndHeight();
 			this.mouseChildren = false;
 		}
 		
@@ -135,14 +138,7 @@ package org.josht.display
 		 * @private
 		 */
 		override protected function initialize():void
-		{
-			this._leftWidth = this._scale9Grid.x;
-			this._centerWidth = this._scale9Grid.width;
-			this._rightWidth = this._texture.width - this._scale9Grid.width - this._scale9Grid.x;
-			this._topHeight = this._scale9Grid.y;
-			this._middleHeight = this._scale9Grid.height;
-			this._bottomHeight = this._texture.height - this._scale9Grid.height - this._scale9Grid.y;
-			
+		{	
 			HELPER_POINT.x = HELPER_POINT.y = 0;
 			if(this._leftWidth > 0 && this._topHeight > 0)
 			{
@@ -250,18 +246,8 @@ package org.josht.display
 			const scaledTopHeight:Number = this._topHeight * this._textureScale;
 			const scaledRightWidth:Number = this._rightWidth * this._textureScale;
 			const scaledBottomHeight:Number = this._bottomHeight * this._textureScale;
-			if(isNaN(this._width))
-			{
-				this._width = this._leftWidth + this._centerWidth + this._rightWidth * this._textureScale;
-			}
-			
-			if(isNaN(this._height))
-			{
-				this._height = this._topHeight + this._middleHeight + this._bottomHeight * this._textureScale;
-			}
-			
-			const scaledCenterWidth:Number = Math.max(0, this._width - scaledLeftWidth - scaledRightWidth);
-			const scaledMiddleHeight:Number = Math.max(0, this._height - scaledTopHeight - scaledBottomHeight);
+			const scaledCenterWidth:Number = Math.max(0, this.actualWidth - scaledLeftWidth - scaledRightWidth);
+			const scaledMiddleHeight:Number = Math.max(0, this.actualHeight - scaledTopHeight - scaledBottomHeight);
 			const centerScale:Number = scaledCenterWidth / this._centerWidth;
 			const middleScale:Number = scaledMiddleHeight / this._middleHeight;
 			
@@ -351,6 +337,29 @@ package org.josht.display
 				this.graphics.drawRect(HELPER_MATRIX.tx, HELPER_MATRIX.ty, scaledCenterWidth, scaledMiddleHeight);
 				this.graphics.endFill();
 			}
+		}
+		
+		/**
+		 * @private
+		 */
+		private function saveRegions():void
+		{
+			this._leftWidth = this._scale9Grid.x;
+			this._centerWidth = this._scale9Grid.width;
+			this._rightWidth = this._texture.width - this._scale9Grid.width - this._scale9Grid.x;
+			this._topHeight = this._scale9Grid.y;
+			this._middleHeight = this._scale9Grid.height;
+			this._bottomHeight = this._texture.height - this._scale9Grid.height - this._scale9Grid.y;
+		}
+		
+		/**
+		 * @private
+		 */
+		private function initializeWidthAndHeight():void
+		{
+			var width:Number = (this._leftWidth + this._centerWidth + this._rightWidth) * this._textureScale;
+			var height:Number = (this._topHeight + this._middleHeight + this._bottomHeight) * this._textureScale;
+			this.setSizeInternal(width, height, true);
 		}
 	}
 }
