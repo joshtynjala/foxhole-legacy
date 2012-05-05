@@ -111,9 +111,34 @@ package org.josht.foxhole.controls
 		
 		/**
 		 * @private
+		 * The point where we stop calculating velocity changes because floating
+		 * point issues can start to appear.
+		 */
+		private static const MINIMUM_VELOCITY:Number = 0.02;
+		
+		/**
+		 * @private
 		 * The friction applied every frame when the scroller is "thrown".
 		 */
-		private static const FRICTION:Number = 0.9925;
+		private static const FRICTION:Number = 0.998;
+		
+		/**
+		 * @private
+		 * Extra friction applied when the scroller is beyond its bounds and
+		 * needs to bounce back.
+		 */
+		private static const EXTRA_FRICTION:Number = 0.95;
+		
+		/**
+		 * @private
+		 * Older saved velocities are given less importance.
+		 */
+		private static const VELOCITY_WEIGHTS:Vector.<Number> = new <Number>[2, 1.66, 1.33, 1];
+		
+		/**
+		 * @private
+		 */
+		private static const MAXIMUM_SAVED_VELOCITY_COUNT:int = 4;
 		
 		/**
 		 * Constructor.
@@ -131,13 +156,15 @@ package org.josht.foxhole.controls
 		private var _startTouchY:Number;
 		private var _startHorizontalScrollPosition:Number;
 		private var _startVerticalScrollPosition:Number;
+		private var _currentTouchX:Number;
+		private var _currentTouchY:Number;
 		private var _previousTouchTime:int;
 		private var _previousTouchX:Number;
 		private var _previousTouchY:Number;
 		private var _velocityX:Number;
 		private var _velocityY:Number;
-		private var _previousVelocityX:Number;
-		private var _previousVelocityY:Number;
+		private var _previousVelocityX:Vector.<Number> = new <Number>[];
+		private var _previousVelocityY:Vector.<Number> = new <Number>[];
 		
 		private var _horizontalAutoScrollTween:GTween;
 		private var _verticalAutoScrollTween:GTween;
@@ -473,8 +500,10 @@ package org.josht.foxhole.controls
 		public function stopScrolling():void
 		{
 			this._isScrollingStopped = true;
-			this._velocityX = this._previousVelocityX = 0;
-			this._velocityY = this._previousVelocityY = 0;
+			this._velocityX = 0;
+			this._velocityY = 0;
+			this._previousVelocityX.length = 0;
+			this._previousVelocityY.length = 0;
 		}
 		
 		/**
@@ -583,8 +612,15 @@ package org.josht.foxhole.controls
 					this._verticalAutoScrollTween = null;
 				}
 				this._touchPointID = -1;
-				this._velocityX = this._previousVelocityX = 0;
-				this._velocityY = this._previousVelocityY = 0;
+				this._velocityX = 0;
+				this._velocityY = 0;
+				this._previousVelocityX.length = 0;
+				this._previousVelocityY.length = 0;
+				this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
+				this.stage.removeEventListener(MouseEvent.MOUSE_MOVE, stage_touchMoveHandler);
+				this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_touchEndHandler);
+				this.stage.removeEventListener(TouchEvent.TOUCH_MOVE, stage_touchMoveHandler);
+				this.stage.removeEventListener(TouchEvent.TOUCH_END, stage_touchEndHandler);
 				if(this._viewPort)
 				{
 					this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width - this.actualWidth);
@@ -796,32 +832,45 @@ package org.josht.foxhole.controls
 		 */
 		protected function throwHorizontally(pixelsPerMS:Number):void
 		{
-			const frameRate:int = this.stage.frameRate;
-			var pixelsPerFrame:Number = (1000 * pixelsPerMS) / frameRate;
-			var targetHorizontalScrollPosition:Number = this._horizontalScrollPosition;
-			var frameCount:int = 0;
-			while(Math.floor(Math.abs(pixelsPerFrame)) > 0)
+			var absPixelsPerMS:Number = Math.abs(pixelsPerMS);
+			if(absPixelsPerMS <= MINIMUM_VELOCITY)
 			{
-				targetHorizontalScrollPosition -= pixelsPerFrame;
-				if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
+				this.finishScrollingHorizontally();
+				return;
+			}
+			var targetHorizontalScrollPosition:Number = this._horizontalScrollPosition + (pixelsPerMS - MINIMUM_VELOCITY) / Math.log(FRICTION);
+			if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
+			{
+				var duration:Number = 0;
+				targetHorizontalScrollPosition = this._horizontalScrollPosition;
+				while(Math.abs(pixelsPerMS) > MINIMUM_VELOCITY)
 				{
-					if(this._hasElasticEdges)
+					targetHorizontalScrollPosition -= pixelsPerMS;
+					if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
 					{
-						pixelsPerFrame *= 0.5;
-						targetHorizontalScrollPosition += pixelsPerFrame;
+						if(this._hasElasticEdges)
+						{
+							pixelsPerMS *= FRICTION * EXTRA_FRICTION;
+						}
+						else
+						{
+							targetHorizontalScrollPosition = clamp(targetHorizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
+							duration++;
+							break;
+						}
 					}
 					else
 					{
-						targetHorizontalScrollPosition = clamp(targetHorizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
-						frameCount++;
-						break;
+						pixelsPerMS *= FRICTION;
 					}
+					duration++;
 				}
-				pixelsPerFrame *= FRICTION;
-				frameCount++;
 			}
-			
-			this.throwTo(targetHorizontalScrollPosition, NaN, frameCount / frameRate);
+			else
+			{
+				duration = Math.log(MINIMUM_VELOCITY / absPixelsPerMS) / Math.log(FRICTION);
+			}
+			this.throwTo(targetHorizontalScrollPosition, NaN, duration / 1000);
 		}
 		
 		/**
@@ -829,31 +878,46 @@ package org.josht.foxhole.controls
 		 */
 		protected function throwVertically(pixelsPerMS:Number):void
 		{
-			const frameRate:int = this.stage.frameRate;
-			var pixelsPerFrame:Number = (1000 * pixelsPerMS) / frameRate;
-			var targetVerticalScrollPosition:Number = this._verticalScrollPosition;
-			var frameCount:int = 0;
-			while(Math.floor(Math.abs(pixelsPerFrame)) > 0)
+			var absPixelsPerMS:Number = Math.abs(pixelsPerMS);
+			if(absPixelsPerMS <= MINIMUM_VELOCITY)
 			{
-				targetVerticalScrollPosition -= pixelsPerFrame;
-				if(targetVerticalScrollPosition < 0 || targetVerticalScrollPosition > this._maxVerticalScrollPosition)
+				this.finishScrollingVertically();
+				return;
+			}
+			
+			var targetVerticalScrollPosition:Number = this._verticalScrollPosition + (pixelsPerMS - MINIMUM_VELOCITY) / Math.log(FRICTION);
+			if(targetVerticalScrollPosition < 0 || targetVerticalScrollPosition > this._maxVerticalScrollPosition)
+			{
+				var duration:Number = 0;
+				targetVerticalScrollPosition = this._verticalScrollPosition;
+				while(Math.abs(pixelsPerMS) > MINIMUM_VELOCITY)
 				{
-					if(this._hasElasticEdges)
+					targetVerticalScrollPosition -= pixelsPerMS;
+					if(targetVerticalScrollPosition < 0 || targetVerticalScrollPosition > this._maxVerticalScrollPosition)
 					{
-						pixelsPerFrame *= 0.5;
-						targetVerticalScrollPosition += pixelsPerFrame;
+						if(this._hasElasticEdges)
+						{
+							pixelsPerMS *= FRICTION * EXTRA_FRICTION;
+						}
+						else
+						{
+							targetVerticalScrollPosition = clamp(targetVerticalScrollPosition, 0, this._maxVerticalScrollPosition);
+							duration++;
+							break;
+						}
 					}
 					else
 					{
-						targetVerticalScrollPosition = clamp(targetVerticalScrollPosition, 0, this._maxVerticalScrollPosition);
-						frameCount++;
-						break;
+						pixelsPerMS *= FRICTION;
 					}
+					duration++;
 				}
-				pixelsPerFrame *= FRICTION;
-				frameCount++;
 			}
-			this.throwTo(NaN, targetVerticalScrollPosition, frameCount / frameRate);
+			else
+			{
+				duration = Math.log(MINIMUM_VELOCITY / absPixelsPerMS) / Math.log(FRICTION);
+			}
+			this.throwTo(NaN, targetVerticalScrollPosition, duration / 1000);
 		}
 		
 		/**
@@ -907,13 +971,13 @@ package org.josht.foxhole.controls
 				this._verticalAutoScrollTween = null
 			}
 			
-			const stageX:Number = (event is TouchEvent) ? TouchEvent(event).stageX : MouseEvent(event).stageX;
-			const stageY:Number = (event is TouchEvent) ? TouchEvent(event).stageY : MouseEvent(event).stageY;
-			this._velocityX = this._previousVelocityX = 0;
-			this._velocityY = this._previousVelocityY = 0;
+			this._velocityX = 0;
+			this._velocityY = 0;
+			this._previousVelocityX.length = 0;
+			this._previousVelocityY.length = 0;
 			this._previousTouchTime = getTimer();
-			this._previousTouchX = this._startTouchX = stageX;
-			this._previousTouchY = this._startTouchY = stageY;
+			this._previousTouchX = this._startTouchX = this._currentTouchX = (event is TouchEvent) ? TouchEvent(event).stageX : MouseEvent(event).stageX;
+			this._previousTouchY = this._startTouchY = this._currentTouchY = (event is TouchEvent) ? TouchEvent(event).stageY : MouseEvent(event).stageY;
 			this._startHorizontalScrollPosition = this._horizontalScrollPosition;
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
 			this._isDraggingHorizontally = false;
@@ -931,6 +995,7 @@ package org.josht.foxhole.controls
 				this.stage.addEventListener(MouseEvent.MOUSE_MOVE, stage_touchMoveHandler);
 				this.stage.addEventListener(MouseEvent.MOUSE_UP, stage_touchEndHandler);
 			}
+			this.addEventListener(Event.ENTER_FRAME, enterFrameHandler);
 		}
 		
 		private function stage_touchMoveHandler(event:Event):void
@@ -939,28 +1004,42 @@ package org.josht.foxhole.controls
 			{
 				return;
 			}
+			
+			this._currentTouchX = (event is TouchEvent) ? TouchEvent(event).stageX : MouseEvent(event).stageX;
+			this._currentTouchY = (event is TouchEvent) ? TouchEvent(event).stageY : MouseEvent(event).stageY;
+		}
+		
+		private function enterFrameHandler(event:Event):void
+		{
 			if(this._isScrollingStopped)
 			{
 				return;
 			}
-			const stageX:Number = (event is TouchEvent) ? TouchEvent(event).stageX : MouseEvent(event).stageX;
-			const stageY:Number = (event is TouchEvent) ? TouchEvent(event).stageY : MouseEvent(event).stageY;
+			
 			
 			const now:int = getTimer();
 			const timeOffset:int = now - this._previousTouchTime;
 			if(timeOffset > 0)
 			{
 				//we're keeping two velocity updates to improve accuracy
-				this._previousVelocityX = this._velocityX;
-				this._previousVelocityY = this._velocityY;
-				this._velocityX = (stageX - this._previousTouchX) / timeOffset;
-				this._velocityY = (stageY - this._previousTouchY) / timeOffset;
-				this._previousTouchTime = now
-				this._previousTouchX = stageX;
-				this._previousTouchY = stageY;
+				this._previousVelocityX.unshift(this._velocityX);
+				if(this._previousVelocityX.length > MAXIMUM_SAVED_VELOCITY_COUNT)
+				{
+					this._previousVelocityX.pop();
+				}
+				this._previousVelocityY.unshift(this._velocityY);
+				if(this._previousVelocityY.length > MAXIMUM_SAVED_VELOCITY_COUNT)
+				{
+					this._previousVelocityY.pop();
+				}
+				this._velocityX = (this._currentTouchX - this._previousTouchX) / timeOffset;
+				this._velocityY = (this._currentTouchY - this._previousTouchY) / timeOffset;
+				this._previousTouchTime = now;
+				this._previousTouchX = this._currentTouchX;
+				this._previousTouchY = this._currentTouchY;
 			}
-			const horizontalInchesMoved:Number = Math.abs(stageX - this._startTouchX) / Capabilities.screenDPI;
-			const verticalInchesMoved:Number = Math.abs(stageY - this._startTouchY) / Capabilities.screenDPI;
+			const horizontalInchesMoved:Number = Math.abs(this._currentTouchX - this._startTouchX) / Capabilities.screenDPI;
+			const verticalInchesMoved:Number = Math.abs(this._currentTouchY - this._startTouchY) / Capabilities.screenDPI;
 			if(this._horizontalScrollPolicy != SCROLL_POLICY_OFF && !this._isDraggingHorizontally && horizontalInchesMoved >= MINIMUM_DRAG_DISTANCE)
 			{
 				this._isDraggingHorizontally = true;
@@ -969,14 +1048,13 @@ package org.josht.foxhole.controls
 			{
 				this._isDraggingVertically = true;
 			}
-			
 			if(this._isDraggingHorizontally && !this._horizontalAutoScrollTween)
 			{
-				this.updateHorizontalScrollFromTouchPosition(stageX);
+				this.updateHorizontalScrollFromTouchPosition(this._currentTouchX);
 			}
 			if(this._isDraggingVertically && !this._verticalAutoScrollTween)
 			{
-				this.updateVerticalScrollFromTouchPosition(stageY);
+				this.updateVerticalScrollFromTouchPosition(this._currentTouchY);
 			}
 		}
 		
@@ -988,6 +1066,7 @@ package org.josht.foxhole.controls
 			}
 			
 			this._touchPointID = -1;
+			this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
 			this.stage.removeEventListener(MouseEvent.MOUSE_MOVE, stage_touchMoveHandler);
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_touchEndHandler);
 			this.stage.removeEventListener(TouchEvent.TOUCH_MOVE, stage_touchMoveHandler);
@@ -1013,14 +1092,31 @@ package org.josht.foxhole.controls
 			if(!isFinishingHorizontally && this._horizontalScrollPolicy != SCROLL_POLICY_OFF)
 			{
 				//take the average for more accuracy
-				this.throwHorizontally((this._velocityX + this._previousVelocityX) / 2);
+				var sum:Number = this._velocityX * 2.33;
+				var velocityCount:int = this._previousVelocityX.length;
+				var totalWeight:Number = 0;
+				for(var i:int = 0; i < velocityCount; i++)
+				{
+					var weight:Number = VELOCITY_WEIGHTS[i];
+					sum += this._previousVelocityX.shift() * weight;
+					totalWeight += weight;
+				}
+				this.throwHorizontally(sum / totalWeight);
 			}
 			
 			if(!isFinishingVertically && this._verticalScrollPolicy != SCROLL_POLICY_OFF)
 			{
-				this.throwVertically((this._velocityY + this._previousVelocityY) / 2);
+				sum = this._velocityY * 2.33;
+				velocityCount = this._previousVelocityY.length;
+				totalWeight = 0;
+				for(i = 0; i < velocityCount; i++)
+				{
+					weight = VELOCITY_WEIGHTS[i];
+					sum += this._previousVelocityY.shift() * weight;
+					totalWeight += weight;
+				}
+				this.throwVertically(sum / totalWeight);
 			}
-			
 		}
 		
 		/**
@@ -1029,8 +1125,10 @@ package org.josht.foxhole.controls
 		private function removedFromStageHandler(event:Event):void
 		{
 			this._touchPointID = -1;
-			this._velocityX = this._previousVelocityX = 0;
-			this._velocityY = this._previousVelocityY = 0;
+			this._velocityX = 0;
+			this._velocityY = 0;
+			this._previousVelocityX.length = 0;
+			this._previousVelocityY.length = 0;
 			if(this._verticalAutoScrollTween)
 			{
 				this._verticalAutoScrollTween.paused = true;
@@ -1047,6 +1145,7 @@ package org.josht.foxhole.controls
 			this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
 			this._verticalScrollPosition = clamp(this._verticalScrollPosition, 0, this._maxVerticalScrollPosition);
 			
+			this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
 			this.stage.removeEventListener(MouseEvent.MOUSE_MOVE, stage_touchMoveHandler);
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, stage_touchEndHandler);
 			this.stage.removeEventListener(TouchEvent.TOUCH_MOVE, stage_touchMoveHandler);
